@@ -1,4 +1,4 @@
-# ExamPrep — Full-Stack Exam & Interview Prep App
+# ExamPrep — Full-Stack Exam & Interview Prep Application
 
 A full-stack web application for exam preparation and interview practice, powered by Google Gemini AI.
 
