@@ -184,7 +184,7 @@ function AdminDashboardPage() {
     chart: { ...base.chart, type: 'pie', height: 180, margin: [0, 0, 0, 0] },
     tooltip: {
       ...base.tooltip,
-      formatter() { return `<b>${this.point.name}</b>: ${this.y}` },
+      formatter() { return `<b>${(this as any).point.name}</b>: ${this.y}` },
     },
     plotOptions: {
       pie: {

@@ -37,11 +37,12 @@ function ProfilePage() {
   const { toast } = useToast()
   const qc = useQueryClient()
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user?.name || '',
       targetExam: (user as any)?.targetExam || '',
+      examDate: (user as any)?.examDate ? new Date((user as any).examDate).toISOString().split('T')[0] : '',
       hoursPerDay: (user as any)?.hoursPerDay || 4,
     },
   })
@@ -136,7 +137,7 @@ function ProfilePage() {
             <div className="space-y-2">
               <Label>New Password</Label>
               <Input type="password" {...pwReg('newPassword')} />
-              {pwErrors.newPassword && <p className="text-sm text-destructive">{pwErrors.newPassword.message}</p>}
+              {pwErrors.newPassword && <p className="text-sm text-destructive">{pwErrors.newPassword.message as string}</p>}
             </div>
             <Button type="submit" variant="outline" disabled={passwordMutation.isPending}>
               {passwordMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

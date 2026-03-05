@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, type Variants } from 'framer-motion'
 import CountUp from 'react-countup'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -14,7 +14,7 @@ const COLOR_MAP = {
 }
 
 // Variants consumed by a parent motion container with staggerChildren
-export const statsCardVariants = {
+export const statsCardVariants: Variants = {
   hidden:   { opacity: 0, y: 16 },
   visible:  { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
 }

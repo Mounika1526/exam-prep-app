@@ -494,7 +494,7 @@ function VoiceBody({ topicId, examId }: { topicId?: string; examId?: string }) {
 
       {/* Controls */}
       {voiceState === 'idle' || voiceState === 'error' ? (
-        <Button onClick={connect} disabled={voiceState === 'connecting'} className="bg-indigo-600 hover:bg-indigo-700">
+        <Button onClick={connect} className="bg-indigo-600 hover:bg-indigo-700">
           <Mic className="h-4 w-4 mr-2" />
           Connect
         </Button>

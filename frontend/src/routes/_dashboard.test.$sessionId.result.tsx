@@ -300,7 +300,7 @@ function TestResultPage() {
                   min: 0,
                   max: 100,
                   labels: {
-                    ...chartTheme(isDark).yAxis?.labels,
+                    ...(chartTheme(isDark).yAxis as Highcharts.YAxisOptions)?.labels,
                     formatter() { return `${this.value}%` },
                   },
                 },

@@ -40,7 +40,7 @@ export function ProgressChart({ data, isLoading = false }: Props) {
     yAxis: {
       ...base.yAxis,
       labels: {
-        ...base.yAxis?.labels,
+        ...(base.yAxis as Highcharts.YAxisOptions)?.labels,
         formatter() { return `${this.value}m` },
       },
     },

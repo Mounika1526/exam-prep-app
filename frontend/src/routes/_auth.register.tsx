@@ -92,7 +92,7 @@ function RegisterPage() {
   const [isPending, setIsPending] = useState(false)
   const controls = useAnimationControls()
 
-  const { data: examsData } = useQuery<{ data: Exam[] }>({
+  const { data: examsData } = useQuery<{ data: { data: Exam[]; pagination: unknown } }>({
     queryKey: ['exams-list'],
     queryFn:  () => api.get('/exams?limit=50').then((r) => r.data),
     staleTime: 5 * 60 * 1000,
