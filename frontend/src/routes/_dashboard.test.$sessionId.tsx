@@ -7,13 +7,12 @@ import { QuestionCard } from '@/components/test/QuestionCard'
 import { TestTimer } from '@/components/test/TestTimer'
 import { TestProgress } from '@/components/test/TestProgress'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Loader2, Send, Flag, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Loader2, Send, Flag, CheckCircle2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -21,7 +20,6 @@ export const Route = createFileRoute('/_dashboard/test/$sessionId')({
   component: ActiveTestPage,
 })
 
-// Slide variants — custom is the direction: 1 = forward (→), -1 = backward (←)
 const slideVariants = {
   initial: (dir: number) => ({ x: dir * 56, opacity: 0 }),
   animate: { x: 0, opacity: 1 },
@@ -37,32 +35,25 @@ function ActiveTestPage() {
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers,    setAnswers]     = useState<Record<string, string>>({})
   const [flagged,    setFlagged]     = useState<Set<string>>(new Set())
-  const [direction,  setDirection]   = useState(1)  // 1 = forward, -1 = backward
+  const [direction,  setDirection]   = useState(1)
 
-  // ── Fetch session (resumes with existing answers) ────────────────────────
   const { data: sessionData, isLoading, isError } = useQuery({
     queryKey: ['test-session', sessionId],
     queryFn: () => api.get(`/tests/${sessionId}`).then(r => r.data.data),
-    staleTime: Infinity, // don't re-fetch mid-test
+    staleTime: Infinity,
     retry: false,
   })
 
-  // Auto-redirect: if session is already COMPLETED (loaded from cache or backend
-  // returns 400 for completed session), go straight to results.
   useEffect(() => {
     if (sessionData?.status === 'COMPLETED' || isError) {
       navigate({ to: '/test/$sessionId/result', params: { sessionId } })
     }
   }, [sessionData?.status, isError, navigate, sessionId])
 
-  // Pre-populate existing answers on resume
   useEffect(() => {
-    if (sessionData?.answers) {
-      setAnswers(sessionData.answers)
-    }
+    if (sessionData?.answers) setAnswers(sessionData.answers)
   }, [sessionData?.answers])
 
-  // ── Mutations ─────────────────────────────────────────────────────────────
   const answerMutation = useMutation({
     mutationFn: ({ questionId, selectedAnswer }: { questionId: string; selectedAnswer: string }) =>
       api.post(`/tests/${sessionId}/answer`, { questionId, selectedAnswer }).then(r => r.data),
@@ -71,7 +62,6 @@ function ActiveTestPage() {
   const submitMutation = useMutation({
     mutationFn: () => api.post(`/tests/${sessionId}/submit`).then(r => r.data),
     onSuccess: () => {
-      // Remove stale cached session so result page fetches fresh data
       queryClient.removeQueries({ queryKey: ['test-session', sessionId] })
       navigate({ to: '/test/$sessionId/result', params: { sessionId } })
     },
@@ -81,50 +71,56 @@ function ActiveTestPage() {
     },
   })
 
-  // ── Loading state ─────────────────────────────────────────────────────────
+  // ── Loading ─────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="text-muted-foreground">Loading your test…</p>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#00E5CC' }} />
+        <p style={{ color: '#8B8FA8' }}>Loading your test…</p>
       </div>
     )
   }
 
-  // ── Submitting / redirecting state ────────────────────────────────────────
+  // ── Submitting ───────────────────────────────────────────────────────────────
   if (submitMutation.isSuccess || submitMutation.isPending) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center"
+        className="flex flex-col items-center justify-center min-h-[60vh] gap-5 text-center"
       >
         {submitMutation.isSuccess ? (
           <>
-            <CheckCircle2 className="h-14 w-14 text-green-500" />
-            <div>
-              <p className="text-xl font-semibold">Test Submitted!</p>
-              <p className="text-muted-foreground mt-1">Redirecting to your results…</p>
+            <div
+              className="h-20 w-20 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(74,222,128,0.15)', boxShadow: '0 0 40px rgba(74,222,128,0.3)' }}
+            >
+              <CheckCircle2 className="h-10 w-10" style={{ color: '#4ADE80' }} />
             </div>
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <div>
+              <p className="text-xl font-bold" style={{ fontFamily: '"Playfair Display", Georgia, serif', color: '#F2F2F0' }}>
+                Test Submitted!
+              </p>
+              <p className="mt-1" style={{ color: '#8B8FA8' }}>Redirecting to your results…</p>
+            </div>
+            <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#8B8FA8' }} />
           </>
         ) : (
           <>
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-lg font-medium">Submitting your test…</p>
-            <p className="text-sm text-muted-foreground">Please wait, do not close this page.</p>
+            <Loader2 className="h-10 w-10 animate-spin" style={{ color: '#00E5CC' }} />
+            <p className="text-lg font-medium" style={{ color: '#F2F2F0' }}>Submitting your test…</p>
+            <p className="text-sm" style={{ color: '#8B8FA8' }}>Please wait, do not close this page.</p>
           </>
         )}
       </motion.div>
     )
   }
 
-  // ── Error / redirect state (session COMPLETED or not found) ──────────────
   if (isError || !sessionData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Redirecting to results…</p>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#00E5CC' }} />
+        <p style={{ color: '#8B8FA8' }}>Redirecting to results…</p>
       </div>
     )
   }
@@ -134,7 +130,7 @@ function ActiveTestPage() {
 
   if (questions.length === 0) {
     return (
-      <p className="text-center text-muted-foreground mt-12">
+      <p className="text-center mt-12" style={{ color: '#8B8FA8' }}>
         No questions found for this session.
       </p>
     )
@@ -157,13 +153,9 @@ function ActiveTestPage() {
     })
   }
 
-  // Direction-aware navigation helpers
   const goPrev = () => { setDirection(-1); setCurrentIdx(i => i - 1) }
   const goNext = () => { setDirection(1);  setCurrentIdx(i => i + 1) }
-  const goTo   = (i: number) => {
-    setDirection(i > currentIdx ? 1 : -1)
-    setCurrentIdx(i)
-  }
+  const goTo   = (i: number) => { setDirection(i > currentIdx ? 1 : -1); setCurrentIdx(i) }
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -171,33 +163,24 @@ function ActiveTestPage() {
       {/* ── Top bar: progress + timer ── */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1">
-          <TestProgress
-            current={currentIdx + 1}
-            total={questions.length}
-            answered={totalAnswered}
-          />
+          <TestProgress current={currentIdx + 1} total={questions.length} answered={totalAnswered} />
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {/* Flag toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={() => toggleFlag(currentQ.id)}
-            className={cn(
-              'gap-1.5',
-              flagged.has(currentQ.id) ? 'text-orange-500 hover:text-orange-600' : 'text-muted-foreground'
-            )}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+            style={flagged.has(currentQ.id)
+              ? { background: 'rgba(245,166,35,0.15)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.35)' }
+              : { background: 'rgba(255,255,255,0.05)', color: '#8B8FA8', border: '1px solid rgba(255,255,255,0.09)' }
+            }
           >
-            <Flag className={cn('h-4 w-4', flagged.has(currentQ.id) && 'fill-current')} />
+            <Flag className={cn('h-3.5 w-3.5', flagged.has(currentQ.id) && 'fill-current')} />
             {flagged.has(currentQ.id) ? 'Flagged' : 'Flag'}
-          </Button>
+          </button>
 
-          {/* Timer — only shown when session has a time limit */}
           {timeRemaining !== null && (
-            <TestTimer
-              initialRemainingSeconds={timeRemaining}
-              onTimeout={() => submitMutation.mutate()}
-            />
+            <TestTimer initialRemainingSeconds={timeRemaining} onTimeout={() => submitMutation.mutate()} />
           )}
         </div>
       </div>
@@ -228,19 +211,32 @@ function ActiveTestPage() {
           variant="outline"
           disabled={currentIdx === 0}
           onClick={goPrev}
+          style={{
+            borderColor: 'rgba(255,255,255,0.12)',
+            color: '#8B8FA8',
+            background: 'rgba(255,255,255,0.04)',
+          }}
         >
           Previous
         </Button>
 
         <div className="flex gap-2">
           {!isLastQuestion ? (
-            <Button onClick={goNext}>
-              Next
+            <Button
+              onClick={goNext}
+              className="ep-shimmer-btn"
+              style={{ fontWeight: 600 }}
+            >
+              Next →
             </Button>
           ) : (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button disabled={submitMutation.isPending || submitMutation.isSuccess}>
+                <Button
+                  className="ep-shimmer-btn"
+                  style={{ fontWeight: 600 }}
+                  disabled={submitMutation.isPending || submitMutation.isSuccess}
+                >
                   {submitMutation.isPending
                     ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     : <Send className="h-4 w-4 mr-2" />
@@ -256,12 +252,12 @@ function ActiveTestPage() {
                     <strong>{totalAnswered}</strong> of{' '}
                     <strong>{questions.length}</strong> questions.
                     {totalAnswered < questions.length && (
-                      <span className="text-yellow-600">
+                      <span className="text-yellow-500">
                         {' '}{questions.length - totalAnswered} will be marked as skipped.
                       </span>
                     )}
                     {flagged.size > 0 && (
-                      <span className="block mt-1 text-orange-500">
+                      <span className="block mt-1 text-orange-400">
                         {flagged.size} question{flagged.size > 1 ? 's are' : ' is'} flagged for review.
                       </span>
                     )}
@@ -273,9 +269,7 @@ function ActiveTestPage() {
                     onClick={() => submitMutation.mutate()}
                     disabled={submitMutation.isPending || submitMutation.isSuccess}
                   >
-                    {submitMutation.isPending && (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    )}
+                    {submitMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     Submit
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -286,58 +280,63 @@ function ActiveTestPage() {
       </div>
 
       {/* ── Question navigator grid ── */}
-      <Card>
-        <CardContent className="py-3">
-          <p className="text-xs text-muted-foreground mb-2">Question Navigator</p>
-          <div className="flex flex-wrap gap-1.5">
-            {questions.map((q: any, i: number) => {
-              const isAnswered = !!answers[q.id]
-              const isFlagged  = flagged.has(q.id)
-              const isCurrent  = i === currentIdx
-              return (
-                <button
-                  key={q.id}
-                  onClick={() => goTo(i)}
-                  title={
-                    isFlagged ? 'Flagged for review' :
-                    isAnswered ? 'Answered' : 'Not answered'
-                  }
-                  className={cn(
-                    'w-8 h-8 rounded text-xs font-medium transition-all relative',
-                    isCurrent
-                      ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1'
-                      : isFlagged
-                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border border-orange-300'
-                      : isAnswered
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                      : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                  )}
-                >
-                  {i + 1}
-                  {isFlagged && (
-                    <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500" />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-          {/* Legend */}
-          <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded bg-primary inline-block" /> Current
+      <div
+        className="glass-card rounded-2xl p-4"
+        style={{ border: '1px solid rgba(255,255,255,0.07)' }}
+      >
+        <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#8B8FA8' }}>
+          Question Navigator
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {questions.map((q: any, i: number) => {
+            const isAnswered = !!answers[q.id]
+            const isFlagged  = flagged.has(q.id)
+            const isCurrent  = i === currentIdx
+            return (
+              <button
+                key={q.id}
+                onClick={() => goTo(i)}
+                title={isFlagged ? 'Flagged' : isAnswered ? 'Answered' : 'Not answered'}
+                className={cn('quiz-dot w-8 h-8 rounded-lg text-xs font-semibold transition-all relative', {
+                  'quiz-dot-current':  isCurrent,
+                  'quiz-dot-flagged':  isFlagged && !isCurrent,
+                  'quiz-dot-answered': isAnswered && !isFlagged && !isCurrent,
+                })}
+                style={!isCurrent && !isFlagged && !isAnswered
+                  ? { background: 'rgba(255,255,255,0.06)', color: '#8B8FA8', border: '1px solid rgba(255,255,255,0.08)' }
+                  : {}
+                }
+              >
+                {i + 1}
+                {isFlagged && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full"
+                    style={{ background: '#F5A623', boxShadow: '0 0 5px rgba(245,166,35,0.6)' }}
+                  />
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-4 mt-3 text-[10px]" style={{ color: '#8B8FA8' }}>
+          {[
+            { color: '#00E5CC', shadow: 'rgba(0,229,204,0.5)', label: 'Current' },
+            { color: 'rgba(34,197,94,0.3)', shadow: '', label: 'Answered' },
+            { color: 'rgba(245,166,35,0.2)', shadow: '', label: 'Flagged' },
+            { color: 'rgba(255,255,255,0.06)', shadow: '', label: 'Unanswered' },
+          ].map(({ color, shadow, label }) => (
+            <span key={label} className="flex items-center gap-1.5">
+              <span
+                className="h-2.5 w-2.5 rounded inline-block"
+                style={{ background: color, boxShadow: shadow ? `0 0 6px ${shadow}` : undefined }}
+              />
+              {label}
             </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded bg-green-200 inline-block" /> Answered
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded bg-orange-200 inline-block" /> Flagged
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded bg-muted inline-block" /> Unanswered
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

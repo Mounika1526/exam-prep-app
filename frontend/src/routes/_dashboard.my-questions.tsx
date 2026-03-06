@@ -3,19 +3,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Sparkles, Trash2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/EmptyState'
 
 export const Route = createFileRoute('/_dashboard/my-questions')({
   component: MyQuestionsPage,
 })
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SavedQuestion {
   id: string
@@ -29,21 +25,16 @@ interface SavedQuestion {
   topic?: { title: string } | null
 }
 
-// ─── Difficulty badge colours ──────────────────────────────────────────────────
-
-const DIFF_COLORS = {
-  EASY:   'bg-green-100 text-green-700 border-green-200',
-  MEDIUM: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  HARD:   'bg-red-100 text-red-700 border-red-200',
+const DIFF_STYLE: Record<string, { bg: string; color: string; border: string }> = {
+  EASY:   { bg: 'rgba(74,222,128,0.12)',  color: '#4ADE80', border: 'rgba(74,222,128,0.3)'  },
+  MEDIUM: { bg: 'rgba(245,166,35,0.12)',  color: '#F5A623', border: 'rgba(245,166,35,0.3)'  },
+  HARD:   { bg: 'rgba(248,113,113,0.12)', color: '#F87171', border: 'rgba(248,113,113,0.3)' },
 }
-
-// ─── Flashcard ────────────────────────────────────────────────────────────────
 
 function Flashcard({ q, onDelete }: { q: SavedQuestion; onDelete: () => void }) {
   const [flipped, setFlipped] = useState(false)
-
   const entries = Object.entries(q.options ?? {})
-  const isCorrectOption = (key: string) => key === q.answer
+  const diff = DIFF_STYLE[q.difficulty] ?? DIFF_STYLE.MEDIUM
 
   return (
     <div style={{ perspective: '1000px' }} className="h-52">
@@ -58,21 +49,54 @@ function Flashcard({ q, onDelete }: { q: SavedQuestion; onDelete: () => void }) 
       >
         {/* ── Front ── */}
         <div
-          style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
-          className="border rounded-lg p-4 bg-card flex flex-col justify-between cursor-pointer hover:shadow-md transition-shadow"
+          style={{
+            backfaceVisibility: 'hidden',
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 12,
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+          }}
           onClick={() => setFlipped(true)}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLElement).style.background = 'rgba(0,229,204,0.05)'
+            ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,204,0.15)'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'
+            ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'
+          }}
         >
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-medium leading-relaxed flex-1 line-clamp-4">{q.question}</p>
-            <Badge variant="outline" className={cn('text-xs shrink-0', DIFF_COLORS[q.difficulty])}>
+            <p className="text-sm font-medium leading-relaxed flex-1 line-clamp-4" style={{ color: '#F2F2F0' }}>
+              {q.question}
+            </p>
+            <span
+              className="text-xs shrink-0 px-2 py-0.5 rounded-full font-semibold"
+              style={{ background: diff.bg, color: diff.color, border: `1px solid ${diff.border}` }}
+            >
               {q.difficulty}
-            </Badge>
+            </span>
           </div>
           <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-muted-foreground">Tap to reveal answer</span>
+            <span className="text-xs" style={{ color: '#8B8FA8' }}>Tap to reveal answer</span>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete() }}
-              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              className="h-7 w-7 flex items-center justify-center rounded-md transition-colors"
+              style={{ color: '#8B8FA8' }}
+              onMouseEnter={e => {
+                ;(e.currentTarget as HTMLElement).style.color = '#F87171'
+                ;(e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.1)'
+              }}
+              onMouseLeave={e => {
+                ;(e.currentTarget as HTMLElement).style.color = '#8B8FA8'
+                ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
               title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -87,49 +111,68 @@ function Flashcard({ q, onDelete }: { q: SavedQuestion; onDelete: () => void }) 
             transform: 'rotateY(180deg)',
             position: 'absolute',
             inset: 0,
+            background: 'rgba(0,229,204,0.04)',
+            border: '1px solid rgba(0,229,204,0.15)',
+            borderRadius: 12,
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            cursor: 'pointer',
+            overflowY: 'auto',
           }}
-          className="border rounded-lg p-4 bg-card flex flex-col gap-2 cursor-pointer overflow-y-auto hover:shadow-md transition-shadow"
           onClick={() => setFlipped(false)}
         >
           {entries.length > 0 ? (
             <div className="space-y-1">
-              {entries.map(([key, val]) => (
-                <div
-                  key={key}
-                  className={cn(
-                    'flex items-center gap-2 px-2.5 py-1.5 rounded text-xs',
-                    isCorrectOption(key)
-                      ? 'bg-green-100 text-green-700 font-semibold'
-                      : 'text-muted-foreground opacity-60',
-                  )}
-                >
-                  <span className={cn(
-                    'h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0',
-                    isCorrectOption(key) ? 'bg-green-500 text-white' : 'bg-muted',
-                  )}>
-                    {key}
-                  </span>
-                  {val}
-                </div>
-              ))}
+              {entries.map(([key, val]) => {
+                const isCorrect = key === q.answer
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs"
+                    style={{
+                      background: isCorrect ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.03)',
+                      color: isCorrect ? '#4ADE80' : 'rgba(255,255,255,0.4)',
+                      fontWeight: isCorrect ? 700 : 400,
+                    }}
+                  >
+                    <span
+                      className="h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                      style={{
+                        background: isCorrect ? '#4ADE80' : 'rgba(255,255,255,0.08)',
+                        color: isCorrect ? '#0D0F1A' : '#8B8FA8',
+                      }}
+                    >
+                      {key}
+                    </span>
+                    {val}
+                  </div>
+                )
+              })}
             </div>
           ) : (
-            <p className="text-sm font-semibold text-green-700">Answer: {q.answer}</p>
+            <p className="text-sm font-semibold" style={{ color: '#4ADE80' }}>Answer: {q.answer}</p>
           )}
 
           {q.explanation && (
-            <p className="text-xs text-muted-foreground border-t pt-2 mt-auto leading-relaxed line-clamp-3">
+            <p
+              className="text-xs leading-relaxed line-clamp-3 mt-auto"
+              style={{
+                color: '#8B8FA8',
+                borderTop: '1px solid rgba(255,255,255,0.06)',
+                paddingTop: 8,
+              }}
+            >
               {q.explanation}
             </p>
           )}
-          <span className="text-[10px] text-muted-foreground mt-auto">Tap to flip back</span>
+          <span className="text-[10px]" style={{ color: '#8B8FA8', marginTop: 'auto' }}>Tap to flip back</span>
         </div>
       </div>
     </div>
   )
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 function MyQuestionsPage() {
   const { toast } = useToast()
@@ -143,15 +186,12 @@ function MyQuestionsPage() {
 
   const allQuestions: SavedQuestion[] = data ?? []
 
-  // Build unique topic list for filter
   const topics = useMemo(() => {
     const seen = new Map<string, string>()
     allQuestions.forEach(q => {
-      if (q.topicId && q.topic?.title) {
-        seen.set(q.topicId, q.topic.title)
-      }
+      if (q.topicId && q.topic?.title) seen.set(q.topicId, q.topic.title)
     })
-    return Array.from(seen.entries()) // [id, title]
+    return Array.from(seen.entries())
   }, [allQuestions])
 
   const filtered = topicFilter === 'ALL'
@@ -169,25 +209,40 @@ function MyQuestionsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">My Question Bank</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <h1
+            className="text-2xl font-bold"
+            style={{
+              fontFamily: '"Playfair Display", Georgia, serif',
+              color: '#F2F2F0',
+              letterSpacing: '-0.025em',
+            }}
+          >
+            My Question Bank
+          </h1>
+          <p className="text-sm mt-1" style={{ color: '#8B8FA8' }}>
             Questions you've saved from AI generation sessions.
           </p>
         </div>
         {allQuestions.length > 0 && (
-          <Badge variant="secondary" className="text-sm px-3 py-1">
+          <span
+            className="text-sm px-3 py-1 rounded-full font-semibold"
+            style={{
+              background: 'rgba(0,229,204,0.12)',
+              color: '#00E5CC',
+              border: '1px solid rgba(0,229,204,0.3)',
+            }}
+          >
             {allQuestions.length} saved
-          </Badge>
+          </span>
         )}
       </div>
 
       {/* Filter */}
       {topics.length > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Filter by topic:</span>
+          <span className="text-sm" style={{ color: '#8B8FA8' }}>Filter by topic:</span>
           <Select value={topicFilter} onValueChange={setTopicFilter}>
             <SelectTrigger className="w-52 h-8 text-sm">
               <SelectValue />
@@ -206,7 +261,7 @@ function MyQuestionsPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-52 rounded-lg" />
+            <Skeleton key={i} className="h-52 rounded-xl" />
           ))}
         </div>
       ) : filtered.length === 0 ? (

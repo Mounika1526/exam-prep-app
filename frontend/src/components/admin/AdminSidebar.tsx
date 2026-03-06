@@ -1,5 +1,4 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAuthStore } from '@/stores/authStore'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -9,7 +8,7 @@ import {
 } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard',    to: '/admin',               exact: true },
+  { icon: LayoutDashboard, label: 'Dashboard',    to: '/admin',               exact: true  },
   { icon: Users,           label: 'Users',         to: '/admin/users',         exact: false },
   { icon: BookOpen,        label: 'Exams',         to: '/admin/exams',         exact: false },
   { icon: HelpCircle,      label: 'Questions',     to: '/admin/questions',     exact: false },
@@ -18,10 +17,10 @@ const NAV_ITEMS = [
 ]
 
 export function AdminSidebar() {
-  const { logout } = useAuth()
-  const { user }   = useAuthStore()
-  const routerState = useRouterState()
-  const pathname = routerState.location.pathname
+  const { logout }   = useAuth()
+  const { user }     = useAuthStore()
+  const routerState  = useRouterState()
+  const pathname     = routerState.location.pathname
 
   const initials = user?.name?.split(' ').map((n) => n[0]).join('').toUpperCase() || 'U'
 
@@ -29,50 +28,109 @@ export function AdminSidebar() {
     exact ? pathname === to : pathname === to || pathname.startsWith(to + '/')
 
   return (
-    <aside className="hidden md:flex flex-col w-64 border-r bg-card shrink-0">
+    <aside
+      className="hidden md:flex flex-col w-64 shrink-0"
+      style={{
+        background: 'rgba(13,15,26,0.95)',
+        borderRight: '1px solid rgba(255,255,255,0.07)',
+        backdropFilter: 'blur(16px)',
+      }}
+    >
       {/* Logo */}
-      <div className="flex items-center gap-2 px-6 py-5 border-b">
-        <ShieldCheck className="h-7 w-7 text-primary" />
-        <span className="text-xl font-bold">ExamPrep</span>
-        <span className="text-xs font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded ml-1">
-          Admin
+      <div
+        className="flex items-center gap-3 px-6 py-5"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+      >
+        <div
+          className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: 'rgba(0,229,204,0.15)', border: '1px solid rgba(0,229,204,0.3)' }}
+        >
+          <ShieldCheck className="h-4.5 w-4.5" style={{ width: 18, height: 18, color: '#00E5CC' }} />
+        </div>
+        <span
+          className="text-lg font-bold"
+          style={{ fontFamily: '"Playfair Display", Georgia, serif', color: '#F2F2F0' }}
+        >
+          ExamPrep
+        </span>
+        <span
+          className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+          style={{ background: 'rgba(0,229,204,0.12)', color: '#00E5CC', border: '1px solid rgba(0,229,204,0.25)' }}
+        >
+          ADMIN
         </span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map(({ icon: Icon, label, to, exact }) => (
-          <Link
-            key={to}
-            to={to}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
-              isActive(to, exact)
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-            )}
-          >
-            <Icon className="h-5 w-5 shrink-0" />
-            {label}
-          </Link>
-        ))}
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        {NAV_ITEMS.map(({ icon: Icon, label, to, exact }) => {
+          const active = isActive(to, exact)
+          return (
+            <Link
+              key={to}
+              to={to}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+              style={active ? {
+                background: 'rgba(0,229,204,0.10)',
+                color: '#00E5CC',
+                borderLeft: '2px solid #00E5CC',
+                paddingLeft: 10,
+              } : {
+                color: '#8B8FA8',
+                borderLeft: '2px solid transparent',
+              }}
+              onMouseEnter={e => {
+                if (!active) {
+                  ;(e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'
+                  ;(e.currentTarget as HTMLElement).style.color = '#F2F2F0'
+                }
+              }}
+              onMouseLeave={e => {
+                if (!active) {
+                  ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+                  ;(e.currentTarget as HTMLElement).style.color = '#8B8FA8'
+                }
+              }}
+            >
+              <Icon className="h-4.5 w-4.5 shrink-0" style={{ width: 18, height: 18 }} />
+              {label}
+            </Link>
+          )
+        })}
       </nav>
 
       {/* User footer */}
-      <div className="border-t p-3">
-        <div className="flex items-center gap-3 px-2 py-1.5 rounded-md">
-          <Avatar className="h-8 w-8">
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: 12 }}>
+        <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg">
+          <Avatar
+            className="h-8 w-8 shrink-0"
+            style={{ border: '1px solid rgba(0,229,204,0.3)' }}
+          >
             <AvatarImage src={(user as any)?.avatar} />
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+            <AvatarFallback
+              className="text-xs font-semibold"
+              style={{ background: 'rgba(0,229,204,0.15)', color: '#00E5CC' }}
+            >
+              {initials}
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            <p className="text-sm font-medium truncate" style={{ color: '#F2F2F0' }}>{user?.name}</p>
+            <p className="text-xs truncate" style={{ color: '#8B8FA8' }}>{user?.email}</p>
           </div>
         </div>
         <button
           onClick={() => logout()}
-          className="flex items-center gap-3 px-2 py-1.5 w-full rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors mt-1"
+          className="flex items-center gap-3 px-2 py-1.5 w-full rounded-lg text-sm mt-1 transition-colors"
+          style={{ color: '#8B8FA8' }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLElement).style.color = '#F87171'
+            ;(e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.08)'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLElement).style.color = '#8B8FA8'
+            ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+          }}
         >
           <LogOut className="h-4 w-4" />
           Sign Out

@@ -58,7 +58,9 @@ export function Header({ onSearchOpen }: HeaderProps) {
 
   return (
     <>
-      <header className="flex items-center justify-between h-16 px-4 md:px-6 border-b bg-background shrink-0">
+      {/* ── Header bar — blur glass backdrop ── */}
+      <header className="ds-header flex items-center justify-between h-16 px-4 md:px-6 shrink-0 sticky top-0 z-30">
+
         {/* Left: hamburger (mobile) + page title */}
         <div className="flex items-center gap-3">
           {/* Hamburger — mobile only */}
@@ -68,27 +70,74 @@ export function Header({ onSearchOpen }: HeaderProps) {
             className="md:hidden"
             onClick={() => setMobileNavOpen(true)}
             aria-label="Open navigation"
+            style={{ color: '#8B8FA8' }}
           >
             <Menu className="h-5 w-5" />
           </Button>
 
-          {/* Logo — mobile only (sidebar is hidden) */}
+          {/* Logo — mobile only */}
           <div className="flex items-center gap-2 md:hidden">
-            <BookOpen className="h-5 w-5 text-primary" />
+            <div className="ep-logo-icon" style={{ width: 30, height: 30, borderRadius: 7 }}>
+              <BookOpen style={{ width: 15, height: 15, color: '#0D0F1A' }} />
+            </div>
           </div>
 
-          <h1 className="text-lg font-semibold">{pageTitle}</h1>
+          {/* Page title — Playfair Display on desktop */}
+          <h1
+            className="text-lg font-semibold"
+            style={{ fontFamily: '"Playfair Display", Georgia, serif', color: '#F2F2F0', letterSpacing: '-0.01em' }}
+          >
+            {pageTitle}
+          </h1>
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-2">
-          {/* Search — opens command palette (Ctrl+K) */}
+        <div className="flex items-center gap-1.5">
+
+          {/* ── Search button with Ctrl+K hint ── */}
+          <button
+            onClick={onSearchOpen}
+            aria-label="Search (Ctrl+K)"
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-150"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.09)',
+              color: '#8B8FA8',
+            }}
+            onMouseEnter={e => {
+              ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,204,0.3)'
+              ;(e.currentTarget as HTMLElement).style.color = '#F2F2F0'
+            }}
+            onMouseLeave={e => {
+              ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.09)'
+              ;(e.currentTarget as HTMLElement).style.color = '#8B8FA8'
+            }}
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span style={{ fontSize: '13px' }}>Search</span>
+            <kbd
+              className="hidden md:inline-flex items-center gap-0.5 font-mono"
+              style={{
+                fontSize: '10px',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '4px',
+                padding: '1px 5px',
+                color: '#8B8FA8',
+              }}
+            >
+              ⌘K
+            </kbd>
+          </button>
+
+          {/* Search icon — mobile only */}
           <Button
             variant="ghost"
             size="icon"
             onClick={onSearchOpen}
-            aria-label="Search (Ctrl+K)"
-            className="text-muted-foreground"
+            aria-label="Search"
+            className="sm:hidden"
+            style={{ color: '#8B8FA8' }}
           >
             <Search className="h-5 w-5" />
           </Button>
@@ -96,8 +145,14 @@ export function Header({ onSearchOpen }: HeaderProps) {
           {/* Theme toggle */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground" aria-label="Toggle theme">
-                {resolvedTheme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Toggle theme"
+                style={{ color: '#8B8FA8' }}
+                className="hover:text-foreground"
+              >
+                {resolvedTheme === 'dark' ? <Moon className="h-4.5 w-4.5" /> : <Sun className="h-4.5 w-4.5" />}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -114,22 +169,29 @@ export function Header({ onSearchOpen }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* User avatar + dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                <Avatar className="h-9 w-9">
+              <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                <Avatar className="h-9 w-9" style={{ border: '2px solid rgba(0,229,204,0.35)' }}>
                   <AvatarImage src={(user as any)?.avatar} />
-                  <AvatarFallback>{initials}</AvatarFallback>
+                  <AvatarFallback
+                    style={{ background: 'rgba(0,229,204,0.15)', color: '#00E5CC', fontSize: '13px', fontWeight: 700 }}
+                  >
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
-              <div className="flex items-center gap-2 p-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>{initials}</AvatarFallback>
+              <div className="flex items-center gap-2.5 p-3">
+                <Avatar className="h-9 w-9" style={{ border: '2px solid rgba(0,229,204,0.3)' }}>
+                  <AvatarFallback style={{ background: 'rgba(0,229,204,0.12)', color: '#00E5CC', fontWeight: 700 }}>
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col space-y-0.5">
-                  <p className="text-sm font-medium">{user?.name}</p>
+                  <p className="text-sm font-semibold">{user?.name}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </div>

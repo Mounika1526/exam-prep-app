@@ -28,17 +28,19 @@ function LoginPage() {
   const [isPending,    setIsPending]    = useState(false)
   const controls = useAnimationControls()
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(schema) })
-
+  // ── Shake animation on login failure (logic unchanged) ──
   const shake = () =>
     controls.start({
       x: [0, -10, 10, -8, 8, -4, 4, 0],
       transition: { duration: 0.45, ease: 'easeInOut' },
     })
+
+  // ── Submit handler (logic unchanged) ──
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   const onSubmit = async (data: FormData) => {
     setIsPending(true)
@@ -59,15 +61,46 @@ function LoginPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: 'easeOut' }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y:  0 }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
     >
-      <div className="mb-7">
-        <h1 className="text-2xl font-bold">Welcome back</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Sign in to continue your preparation</p>
+      {/* ── Heading section ── */}
+      <div style={{ marginBottom: '32px' }}>
+        {/* Pill badge */}
+        <div className="ep-badge" style={{ marginBottom: '20px' }}>
+          <span style={{ fontSize: '14px' }}>✦</span>
+          <span>Study smarter, not harder</span>
+        </div>
+
+        {/* Main heading — Playfair Display */}
+        <h1
+          style={{
+            fontFamily: '"Playfair Display", Georgia, serif',
+            fontSize: '36px',
+            fontWeight: 700,
+            color: '#F2F2F0',
+            lineHeight: 1.15,
+            letterSpacing: '-0.025em',
+            marginBottom: '8px',
+          }}
+        >
+          Welcome back
+        </h1>
+
+        <p
+          style={{
+            color: '#8B8FA8',
+            fontSize: '15px',
+            lineHeight: 1.6,
+            fontWeight: 400,
+          }}
+        >
+          Sign in to continue your preparation
+        </p>
       </div>
 
+      {/* ── Form (logic 100% unchanged) ── */}
       <motion.form
         animate={controls}
         onSubmit={handleSubmit(onSubmit)}
@@ -104,22 +137,42 @@ function LoginPage() {
             }
             {...register('password')}
           />
-          <div className="flex justify-end">
-            <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+
+          {/* Forgot password */}
+          <div className="flex justify-end" style={{ marginTop: '6px' }}>
+            <Link to="/forgot-password" className="ep-link-teal" style={{ fontSize: '13px' }}>
               Forgot password?
             </Link>
           </div>
         </div>
 
-        <Button type="submit" className="w-full mt-2" disabled={isPending}>
+        {/* Sign-in button with shimmer + glow */}
+        <Button
+          type="submit"
+          className="w-full ep-shimmer-btn"
+          style={{ marginTop: '8px' }}
+          disabled={isPending}
+        >
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Sign In
         </Button>
       </motion.form>
 
-      <p className="text-center text-sm text-muted-foreground mt-6">
-        Don't have an account?{' '}
-        <Link to="/register" className="text-primary hover:underline font-medium">
+      {/* ── Divider ── */}
+      <div className="ep-divider" style={{ margin: '24px 0' }}>
+        <span>or</span>
+      </div>
+
+      {/* ── Register link ── */}
+      <p
+        style={{
+          textAlign: 'center',
+          fontSize: '14px',
+          color: '#8B8FA8',
+        }}
+      >
+        Don&apos;t have an account?{' '}
+        <Link to="/register" className="ep-link-teal">
           Create one
         </Link>
       </p>

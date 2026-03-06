@@ -13,11 +13,16 @@ import {
 
 const REFRESH_COOKIE = 'refreshToken';
 
+// In production, frontend and backend are typically on different domains.
+// SameSite=None + Secure is required for cookies to be sent cross-origin.
+// SameSite=Lax is safe for local development (same-origin or http).
+const IS_PROD = process.env.NODE_ENV === 'production';
+
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+  secure: IS_PROD,                           // HTTPS only in production
+  sameSite: IS_PROD ? 'none' : 'lax',        // cross-domain in prod, relaxed locally
+  maxAge: 7 * 24 * 60 * 60 * 1000,          // 7 days in ms
   path: '/',
 };
 
@@ -69,7 +74,7 @@ export const refresh = async (req, res, next) => {
     return sendSuccess(res, { accessToken: tokens.accessToken }, 'Token refreshed');
   } catch (err) {
     if (err.statusCode === 401) {
-      res.clearCookie(REFRESH_COOKIE, { path: '/' });
+      res.clearCookie(REFRESH_COOKIE, { path: '/', sameSite: IS_PROD ? 'none' : 'lax', secure: IS_PROD });
       return sendError(res, err.message, 401);
     }
     next(err);
@@ -82,7 +87,7 @@ export const logout = async (req, res, next) => {
     const token = req.cookies?.[REFRESH_COOKIE] || req.body?.refreshToken;
     if (token) await logoutUser(token);
 
-    res.clearCookie(REFRESH_COOKIE, { path: '/' });
+    res.clearCookie(REFRESH_COOKIE, { path: '/', sameSite: IS_PROD ? 'none' : 'lax', secure: IS_PROD });
     return sendSuccess(res, null, 'Logged out successfully');
   } catch (err) {
     next(err);

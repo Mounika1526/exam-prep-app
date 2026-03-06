@@ -33,14 +33,29 @@ app.use(
   })
 );
 
+// Support comma-separated CLIENT_URL for multiple allowed origins
+// e.g. CLIENT_URL="https://app.vercel.app,https://www.app.vercel.app"
+const _rawOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow server-to-server / Postman / mobile (no origin header)
+      if (!origin) return callback(null, true);
+      if (_rawOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
+
+// Respond to preflight OPTIONS immediately — before the rate limiter
+app.options('*', cors());
 
 // Global rate limit
 app.use(

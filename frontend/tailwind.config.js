@@ -14,6 +14,11 @@ export default {
       screens: { '2xl': '1400px' },
     },
     extend: {
+      fontFamily: {
+        // "Dark academic meets futuristic study lab" typography
+        playfair: ['"Playfair Display"', 'Georgia', 'serif'],
+        'dm-sans': ['"DM Sans"', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

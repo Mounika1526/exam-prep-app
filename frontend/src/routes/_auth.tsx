@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, Navigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
+import type { Variants } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import { BookOpen, Loader2 } from 'lucide-react'
 
@@ -7,106 +8,203 @@ export const Route = createFileRoute('/_auth')({
   component: AuthLayout,
 })
 
+// ── Stagger animation variants for the left-panel content ──
+const panelVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.14, delayChildren: 0.32 } },
+}
+const itemVariant: Variants = {
+  hidden:  { opacity: 0, y: 28 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.65 } },
+}
+
+// ── Stats shown on the brand panel ──
+const STATS = [
+  { value: '500+',  label: 'Study Topics'       },
+  { value: '10K+',  label: 'Practice Questions' },
+  { value: '24/7',  label: 'AI Tutor'           },
+  { value: '94%',   label: 'Success Rate'       },
+]
+
+// ── Feature bullet list ──
+const FEATURES = [
+  'Personalized AI study plans tailored to your exam',
+  'Real-time mock interviews with instant feedback',
+  'Topic-wise progress heatmap & streak tracking',
+]
+
 function AuthLayout() {
   const { user, isLoading } = useAuth()
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      /* Loading screen inherits the dark theme */
+      <div
+        className="auth-dark min-h-screen flex items-center justify-center"
+        style={{ background: '#0D0F1A' }}
+      >
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#00E5CC' }} />
       </div>
     )
   }
 
-  // Already logged in — redirect to the correct home
   if (user) {
     return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/dashboard'} />
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex">
+    /* ── Root: dark academic canvas ── */
+    <div
+      className="auth-dark min-h-screen flex relative overflow-hidden"
+      style={{ background: '#0D0F1A' }}
+    >
+      {/* ── Ambient floating orbs (CSS-only, no JS) ── */}
+      <div className="ep-orb ep-orb-teal-1" />
+      <div className="ep-orb ep-orb-amber-1" />
+      <div className="ep-orb ep-orb-teal-2" />
 
-      {/* ── Left brand panel (desktop only) ── */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 bg-primary p-12 text-primary-foreground">
+      {/* ── Dot-grid texture overlay ── */}
+      <div className="ep-dot-grid-overlay" />
+
+      {/* ══════════════════════════════════════════════
+          LEFT BRAND PANEL — desktop only (lg+)
+      ══════════════════════════════════════════════ */}
+      <div
+        className="hidden lg:flex flex-col justify-between relative z-10"
+        style={{
+          width: '52%',
+          padding: '56px 64px',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        {/* ── Top: Logo ── */}
         <motion.div
           className="flex items-center gap-3"
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y:   0 }}
+          transition={{ duration: 0.55, ease: 'easeOut' }}
         >
-          <BookOpen className="h-8 w-8" />
-          <span className="text-2xl font-bold tracking-tight">ExamPrep</span>
+          <div className="ep-logo-icon">
+            <BookOpen style={{ width: '20px', height: '20px', color: '#0D0F1A' }} />
+          </div>
+          <span
+            style={{
+              fontSize: '20px',
+              fontWeight: 700,
+              color: '#F2F2F0',
+              letterSpacing: '-0.025em',
+              fontFamily: '"DM Sans", system-ui, sans-serif',
+            }}
+          >
+            ExamPrep
+          </span>
         </motion.div>
 
+        {/* ── Center: Brand copy + stats ── */}
         <motion.div
-          className="space-y-6"
+          className="space-y-8"
+          variants={panelVariants}
           initial="hidden"
           animate="visible"
-          variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.12, delayChildren: 0.25 } },
-          }}
         >
-          <motion.h1
-            className="text-4xl font-bold leading-tight"
-            variants={{
-              hidden:  { opacity: 0, y: 24 },
-              visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-            }}
-          >
-            Your AI-powered<br />exam preparation partner
-          </motion.h1>
+          {/* Main headline — Playfair Display */}
+          <motion.div variants={itemVariant}>
+            <h1
+              style={{
+                fontFamily: '"Playfair Display", Georgia, serif',
+                fontSize: 'clamp(40px, 3.5vw, 56px)',
+                fontWeight: 700,
+                lineHeight: 1.12,
+                color: '#F2F2F0',
+                letterSpacing: '-0.025em',
+              }}
+            >
+              Master Every{' '}
+              <span className="ep-gradient-text">Exam.</span>
+              <br />
+              Ace Every{' '}
+              <span className="ep-gradient-text">Interview.</span>
+            </h1>
+          </motion.div>
 
+          {/* Sub-copy */}
           <motion.p
-            className="text-primary-foreground/80 text-lg leading-relaxed"
-            variants={{
-              hidden:  { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+            variants={itemVariant}
+            style={{
+              fontSize: '16px',
+              lineHeight: 1.75,
+              color: '#8B8FA8',
+              maxWidth: '440px',
+              fontWeight: 400,
             }}
           >
-            Personalized study plans, AI tutoring, practice tests, and progress
-            tracking — everything you need to ace your exam.
+            Your AI-powered companion for GATE, competitive exams, and technical
+            interviews — personalized, adaptive, and always on.
           </motion.p>
 
+          {/* Feature bullets */}
+          <motion.ul variants={itemVariant} className="space-y-3" style={{ listStyle: 'none', padding: 0 }}>
+            {FEATURES.map((feat) => (
+              <li key={feat} className="flex items-start gap-3">
+                <span className="ep-check-dot" style={{ marginTop: '7px' }} />
+                <span style={{ color: '#B0B4CC', fontSize: '14px', lineHeight: 1.6 }}>{feat}</span>
+              </li>
+            ))}
+          </motion.ul>
+
+          {/* Stats grid */}
           <motion.div
-            className="grid grid-cols-2 gap-4 pt-2"
-            variants={{
-              hidden:  { opacity: 0, y: 16 },
-              visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-            }}
+            variants={itemVariant}
+            className="grid grid-cols-2 gap-3"
+            style={{ maxWidth: '400px' }}
           >
-            {[
-              { label: 'Study Topics',      value: '500+' },
-              { label: 'Practice Questions', value: '10,000+' },
-              { label: 'AI Tutor',           value: '24/7' },
-              { label: 'Success Rate',       value: '94%' },
-            ].map((stat) => (
-              <div key={stat.label} className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="text-primary-foreground/70 text-sm mt-0.5">{stat.label}</div>
+            {STATS.map(({ value, label }) => (
+              <div key={label} className="ep-stat-card">
+                <div className="ep-stat-value">{value}</div>
+                <div className="ep-stat-label">{label}</div>
               </div>
             ))}
           </motion.div>
         </motion.div>
 
-        <p className="text-primary-foreground/40 text-sm">
-          © {new Date().getFullYear()} ExamPrep. All rights reserved.
+        {/* ── Bottom: copyright ── */}
+        <p style={{ color: 'rgba(139,143,168,0.38)', fontSize: '13px' }}>
+          &copy; {new Date().getFullYear()} ExamPrep. All rights reserved.
         </p>
       </div>
 
-      {/* ── Right form panel ── */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-8">
-        <div className="w-full max-w-md">
-          {/* Mobile logo */}
+      {/* ══════════════════════════════════════════════
+          RIGHT FORM PANEL — full width on mobile
+      ══════════════════════════════════════════════ */}
+      <div
+        className="flex-1 flex items-center justify-center relative z-10"
+        style={{ padding: 'clamp(24px, 5vw, 56px)' }}
+      >
+        <div style={{ width: '100%', maxWidth: '420px' }}>
+
+          {/* Mobile logo — hidden on desktop */}
           <motion.div
-            className="flex items-center gap-2 mb-8 lg:hidden"
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-2 mb-10 lg:hidden"
+            initial={{ opacity: 0, scale: 0.88 }}
+            animate={{ opacity: 1, scale: 1.00 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
           >
-            <BookOpen className="h-7 w-7 text-primary" />
-            <span className="text-xl font-bold">ExamPrep</span>
+            <div className="ep-logo-icon ep-logo-icon-sm">
+              <BookOpen style={{ width: '18px', height: '18px', color: '#0D0F1A' }} />
+            </div>
+            <span
+              style={{
+                fontSize: '18px',
+                fontWeight: 700,
+                color: '#F2F2F0',
+                letterSpacing: '-0.025em',
+              }}
+            >
+              ExamPrep
+            </span>
           </motion.div>
+
+          {/* Auth page content (Login / Register / Forgot-password) */}
           <Outlet />
         </div>
       </div>

@@ -6,8 +6,6 @@ import type { AdminUser, Role } from '@/types'
 import { UserDetailModal } from '@/components/admin/UserDetailModal'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -22,13 +20,10 @@ import {
   Search, MoreHorizontal, Eye, UserCheck, UserX,
   ShieldCheck, GraduationCap, ChevronLeft, ChevronRight,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/admin/users')({
   component: AdminUsersPage,
 })
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const timeAgo = (s: string | null) => {
   if (!s) return 'Never'
@@ -42,13 +37,10 @@ const timeAgo = (s: string | null) => {
   return d < 30 ? `${d}d ago` : `${Math.floor(d / 30)}mo ago`
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 function AdminUsersPage() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  // ── Filter / sort state ──
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch]           = useState('')
   const [role, setRole]               = useState<Role | ''>('')
@@ -57,26 +49,22 @@ function AdminUsersPage() {
   const [page, setPage]               = useState(1)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
-  // Debounce search input → 400 ms
   useEffect(() => {
     const t = setTimeout(() => { setSearch(searchInput); setPage(1) }, 400)
     return () => clearTimeout(t)
   }, [searchInput])
 
-  // Reset page when filters change
   useEffect(() => { setPage(1) }, [role, sortBy, order])
 
-  // ── Data ──
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['admin-users', { page, search, role, sortBy, order }],
     queryFn: () => adminApi.getUsers({ page, limit: 15, search, role: role || undefined, sortBy, order }),
     placeholderData: (prev) => prev,
   })
 
-  const users    = data?.data ?? []
+  const users      = data?.data ?? []
   const pagination = data?.pagination
 
-  // ── Mutations ──
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: { role?: Role; isActive?: boolean } }) =>
       adminApi.updateUser(id, payload),
@@ -98,37 +86,44 @@ function AdminUsersPage() {
 
   return (
     <div className="space-y-5">
-      {/* Heading */}
       <div>
-        <h1 className="text-2xl font-bold">User Management</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1
+          className="text-2xl font-bold"
+          style={{ fontFamily: '"Playfair Display", Georgia, serif', color: '#F2F2F0', letterSpacing: '-0.025em' }}
+        >
+          User Management
+        </h1>
+        <p className="text-sm mt-1" style={{ color: '#8B8FA8' }}>
           {pagination ? `${pagination.total.toLocaleString()} users total` : 'Manage all platform users'}
         </p>
       </div>
 
-      {/* ── Filters ── */}
-      <Card>
+      {/* Filters */}
+      <Card className="glass-card border-0" style={{ borderRadius: 14 }}>
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-wrap gap-3">
-            {/* Search */}
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
+                style={{ color: '#8B8FA8' }}
+              />
+              <input
                 placeholder="Search name or email…"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-9"
+                className="w-full h-9 pl-9 pr-3 rounded-md text-sm focus:outline-none focus:ring-1"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  color: '#F2F2F0',
+                }}
+                onFocus={e => { e.currentTarget.style.borderColor = 'rgba(0,229,204,0.4)' }}
+                onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)' }}
               />
             </div>
 
-            {/* Role filter */}
-            <Select
-              value={role || 'all'}
-              onValueChange={(v) => setRole(v === 'all' ? '' : v as Role)}
-            >
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="All roles" />
-              </SelectTrigger>
+            <Select value={role || 'all'} onValueChange={(v) => setRole(v === 'all' ? '' : v as Role)}>
+              <SelectTrigger className="w-36"><SelectValue placeholder="All roles" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All roles</SelectItem>
                 <SelectItem value="STUDENT">Student</SelectItem>
@@ -136,7 +131,6 @@ function AdminUsersPage() {
               </SelectContent>
             </Select>
 
-            {/* Sort */}
             <Select
               value={`${sortBy}:${order}`}
               onValueChange={(v) => {
@@ -144,9 +138,7 @@ function AdminUsersPage() {
                 setSortBy(s); setOrder(o)
               }}
             >
-              <SelectTrigger className="w-44">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="createdAt:desc">Newest first</SelectItem>
                 <SelectItem value="createdAt:asc">Oldest first</SelectItem>
@@ -160,12 +152,17 @@ function AdminUsersPage() {
         </CardContent>
       </Card>
 
-      {/* ── Table ── */}
-      <Card>
+      {/* Table */}
+      <Card className="glass-card border-0" style={{ borderRadius: 14 }}>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base flex items-center gap-2" style={{ color: '#F2F2F0' }}>
             Users
-            {isFetching && <span className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
+            {isFetching && (
+              <span
+                className="h-4 w-4 border-2 border-t-transparent rounded-full animate-spin"
+                style={{ borderColor: '#00E5CC', borderTopColor: 'transparent' }}
+              />
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -185,19 +182,19 @@ function AdminUsersPage() {
               ))}
             </div>
           ) : users.length === 0 ? (
-            <div className="py-16 text-center text-muted-foreground text-sm">
+            <div className="py-16 text-center text-sm" style={{ color: '#8B8FA8' }}>
               No users found
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">User</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Role</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Tests</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Last Active</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: '#8B8FA8' }}>User</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: '#8B8FA8' }}>Role</th>
+                    <th className="text-right px-4 py-3 font-medium" style={{ color: '#8B8FA8' }}>Tests</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: '#8B8FA8' }}>Last Active</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: '#8B8FA8' }}>Status</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -220,8 +217,11 @@ function AdminUsersPage() {
 
         {/* Pagination */}
         {pagination && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t">
-            <p className="text-sm text-muted-foreground">
+          <div
+            className="flex items-center justify-between px-4 py-3"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <p className="text-sm" style={{ color: '#8B8FA8' }}>
               Page {pagination.page} of {pagination.totalPages} ({pagination.total} users)
             </p>
             <div className="flex items-center gap-2">
@@ -229,6 +229,7 @@ function AdminUsersPage() {
                 variant="outline" size="sm"
                 onClick={() => setPage((p) => p - 1)}
                 disabled={!pagination.hasPrev}
+                style={{ borderColor: 'rgba(255,255,255,0.12)', color: '#8B8FA8', background: 'transparent' }}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -236,6 +237,7 @@ function AdminUsersPage() {
                 variant="outline" size="sm"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={!pagination.hasNext}
+                style={{ borderColor: 'rgba(255,255,255,0.12)', color: '#8B8FA8', background: 'transparent' }}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -244,11 +246,7 @@ function AdminUsersPage() {
         )}
       </Card>
 
-      {/* User detail modal */}
-      <UserDetailModal
-        userId={selectedUserId}
-        onClose={() => setSelectedUserId(null)}
-      />
+      <UserDetailModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
     </div>
   )
 }
@@ -267,59 +265,88 @@ function UserRow({
   const initials = user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 
   return (
-    <tr className={cn('border-b last:border-0 hover:bg-muted/30 transition-colors', isUpdating && 'opacity-60')}>
-      {/* User info */}
+    <tr
+      style={{
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        opacity: isUpdating ? 0.6 : 1,
+        transition: 'background 0.15s',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+    >
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9 shrink-0">
+          <Avatar
+            className="h-9 w-9 shrink-0"
+            style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+          >
             <AvatarImage src={user.avatar} />
-            <AvatarFallback className="text-xs font-medium">{initials}</AvatarFallback>
+            <AvatarFallback
+              className="text-xs font-medium"
+              style={{ background: 'rgba(0,229,204,0.12)', color: '#00E5CC' }}
+            >
+              {initials}
+            </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="font-medium truncate">{user.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            <p className="font-medium truncate" style={{ color: '#F2F2F0' }}>{user.name}</p>
+            <p className="text-xs truncate" style={{ color: '#8B8FA8' }}>{user.email}</p>
             {user.targetExam && (
-              <p className="text-xs text-primary/70 truncate">{user.targetExam}</p>
+              <p className="text-xs truncate" style={{ color: 'rgba(0,229,204,0.6)' }}>{user.targetExam}</p>
             )}
           </div>
         </div>
       </td>
 
-      {/* Role badge */}
       <td className="px-4 py-3">
-        <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'} className="text-xs">
-          {user.role === 'ADMIN' ? (
-            <><ShieldCheck className="h-3 w-3 mr-1" />Admin</>
-          ) : (
-            <><GraduationCap className="h-3 w-3 mr-1" />Student</>
-          )}
-        </Badge>
+        <span
+          className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full"
+          style={user.role === 'ADMIN' ? {
+            background: 'rgba(0,229,204,0.12)',
+            color: '#00E5CC',
+            border: '1px solid rgba(0,229,204,0.25)',
+          } : {
+            background: 'rgba(255,255,255,0.06)',
+            color: '#8B8FA8',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }}
+        >
+          {user.role === 'ADMIN'
+            ? <><ShieldCheck className="h-3 w-3" />Admin</>
+            : <><GraduationCap className="h-3 w-3" />Student</>
+          }
+        </span>
       </td>
 
-      {/* Tests */}
-      <td className="px-4 py-3 text-right text-muted-foreground">
+      <td className="px-4 py-3 text-right" style={{ color: '#8B8FA8' }}>
         {user._count.testSessions}
       </td>
 
-      {/* Last active */}
-      <td className="px-4 py-3 text-muted-foreground text-sm">
+      <td className="px-4 py-3 text-sm" style={{ color: '#8B8FA8' }}>
         {timeAgo(user.lastActive)}
       </td>
 
-      {/* Status */}
       <td className="px-4 py-3">
-        <span className={cn(
-          'inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full',
-          user.isActive
-            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-        )}>
-          <span className={cn('w-1.5 h-1.5 rounded-full', user.isActive ? 'bg-green-500' : 'bg-red-500')} />
+        <span
+          className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full"
+          style={user.isActive ? {
+            background: 'rgba(74,222,128,0.12)',
+            color: '#4ADE80',
+            border: '1px solid rgba(74,222,128,0.25)',
+          } : {
+            background: 'rgba(248,113,113,0.12)',
+            color: '#F87171',
+            border: '1px solid rgba(248,113,113,0.25)',
+          }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ background: user.isActive ? '#4ADE80' : '#F87171' }}
+          />
           {user.isActive ? 'Active' : 'Inactive'}
         </span>
       </td>
 
-      {/* Actions */}
       <td className="px-4 py-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -333,25 +360,21 @@ function UserRow({
               View Profile
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onChangeRole(user.role === 'ADMIN' ? 'STUDENT' : 'ADMIN')}
-            >
-              {user.role === 'ADMIN' ? (
-                <><GraduationCap className="h-4 w-4 mr-2" />Make Student</>
-              ) : (
-                <><ShieldCheck className="h-4 w-4 mr-2" />Make Admin</>
-              )}
+            <DropdownMenuItem onClick={() => onChangeRole(user.role === 'ADMIN' ? 'STUDENT' : 'ADMIN')}>
+              {user.role === 'ADMIN'
+                ? <><GraduationCap className="h-4 w-4 mr-2" />Make Student</>
+                : <><ShieldCheck className="h-4 w-4 mr-2" />Make Admin</>
+              }
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={onToggleActive}
               className={user.isActive ? 'text-destructive focus:text-destructive' : ''}
             >
-              {user.isActive ? (
-                <><UserX className="h-4 w-4 mr-2" />Deactivate</>
-              ) : (
-                <><UserCheck className="h-4 w-4 mr-2" />Activate</>
-              )}
+              {user.isActive
+                ? <><UserX className="h-4 w-4 mr-2" />Deactivate</>
+                : <><UserCheck className="h-4 w-4 mr-2" />Activate</>
+              }
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

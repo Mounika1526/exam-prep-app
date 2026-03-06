@@ -1,26 +1,21 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { useMemo, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import CountUp from 'react-countup'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
-} from '@/components/ui/accordion'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { useTheme } from '@/contexts/ThemeContext'
 import { chartTheme, DIFF_COLORS } from '@/lib/highchartsTheme'
 import {
   CheckCircle2, XCircle, MinusCircle, Clock, Target,
-  ArrowLeft, RotateCcw, AlertCircle,
+  ArrowLeft, RotateCcw, AlertCircle, ChevronDown,
 } from 'lucide-react'
-import { formatSeconds, getScoreColor, getScoreLabel } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { formatSeconds } from '@/lib/utils'
 
 export const Route = createFileRoute('/_dashboard/test/$sessionId/result')({
   component: TestResultPage,
@@ -28,10 +23,10 @@ export const Route = createFileRoute('/_dashboard/test/$sessionId/result')({
 
 // ─── Animated score ring ──────────────────────────────────────────────────────
 
-function getScoreStroke(score: number) {
-  if (score >= 80) return '#16a34a'
-  if (score >= 60) return '#ca8a04'
-  return '#dc2626'
+function getScoreGradient(score: number): [string, string] {
+  if (score >= 80) return ['#4ADE80', '#00E5CC']
+  if (score >= 60) return ['#F5A623', '#F59E0B']
+  return ['#F87171', '#EF4444']
 }
 
 function AnimatedScoreRing({ score }: { score: number }) {
@@ -40,32 +35,42 @@ function AnimatedScoreRing({ score }: { score: number }) {
   const r           = (size - strokeWidth) / 2
   const circ        = 2 * Math.PI * r
   const offset      = circ * (1 - Math.min(100, Math.max(0, score)) / 100)
+  const [c1, c2]    = getScoreGradient(score)
+  const gradId      = `score-ring-grad`
 
   return (
     <div className="relative inline-flex items-center justify-center">
       <svg width={size} height={size} className="-rotate-90" aria-hidden>
+        <defs>
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={c1} />
+            <stop offset="100%" stopColor={c2} />
+          </linearGradient>
+        </defs>
         {/* Track */}
         <circle
           cx={size / 2} cy={size / 2} r={r}
-          fill="none" className="stroke-muted" strokeWidth={strokeWidth}
+          fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={strokeWidth}
         />
         {/* Animated fill */}
         <motion.circle
           cx={size / 2} cy={size / 2} r={r}
           fill="none"
-          stroke={getScoreStroke(score)}
+          stroke={`url(#${gradId})`}
           strokeWidth={strokeWidth}
           strokeDasharray={circ}
           initial={{ strokeDashoffset: circ }}
           animate={{ strokeDashoffset: offset }}
           transition={{ duration: 1.3, ease: 'easeOut', delay: 0.25 }}
           strokeLinecap="round"
+          style={{ filter: `drop-shadow(0 0 6px ${c1}66)` }}
         />
       </svg>
-      {/* Label — rotated back to upright */}
+      {/* Label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
-          className={cn('text-4xl font-bold tabular-nums leading-none', getScoreColor(score))}
+          className="text-4xl font-bold tabular-nums leading-none"
+          style={{ color: c1 }}
           initial={{ opacity: 0, scale: 0.7 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.6, duration: 0.35, type: 'spring', stiffness: 260, damping: 18 }}
@@ -73,7 +78,8 @@ function AnimatedScoreRing({ score }: { score: number }) {
           <CountUp end={score} duration={1.3} suffix="%" delay={0.6} />
         </motion.span>
         <motion.span
-          className="text-[11px] text-muted-foreground mt-1"
+          className="text-[11px] mt-1"
+          style={{ color: '#8B8FA8' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9 }}
@@ -85,9 +91,9 @@ function AnimatedScoreRing({ score }: { score: number }) {
   )
 }
 
-// ─── Confetti (framer-motion, no extra dep) ───────────────────────────────────
+// ─── Confetti ─────────────────────────────────────────────────────────────────
 
-const CONFETTI_COLORS = ['#22c55e', '#3b82f6', '#a855f7', '#f59e0b', '#ec4899', '#f43f5e']
+const CONFETTI_COLORS = ['#00E5CC', '#4ADE80', '#C084FC', '#F5A623', '#60A5FA', '#F87171']
 
 function Confetti() {
   const particles = useMemo(() =>
@@ -110,30 +116,184 @@ function Confetti() {
           key={p.id}
           className="absolute"
           style={{
-            left: `${p.x}%`,
-            top: -24,
-            width: p.size,
-            height: p.size,
+            left:            `${p.x}%`,
+            top:             -24,
+            width:           p.size,
+            height:          p.size,
             backgroundColor: p.color,
-            borderRadius: p.isCircle ? '50%' : '2px',
+            borderRadius:    p.isCircle ? '50%' : '2px',
           }}
           animate={{
             y:       '115vh',
             rotate:  p.rotation + 720,
             opacity: [1, 1, 0],
           }}
-          transition={{
-            duration: p.speed,
-            delay:    p.delay,
-            ease:     'easeIn',
-          }}
+          transition={{ duration: p.speed, delay: p.delay, ease: 'easeIn' }}
         />
       ))}
     </div>
   )
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Expandable question row ──────────────────────────────────────────────────
+
+function QuestionRow({ q, idx }: { q: any; idx: number }) {
+  const [open, setOpen] = useState(false)
+  const isCorrect = q.isCorrect
+  const isSkipped = q.userAnswer === null || q.userAnswer === undefined
+
+  const borderColor = isCorrect
+    ? 'rgba(74,222,128,0.25)'
+    : isSkipped
+    ? 'rgba(255,255,255,0.07)'
+    : 'rgba(248,113,113,0.25)'
+
+  const iconEl = isCorrect ? (
+    <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: '#4ADE80' }} />
+  ) : isSkipped ? (
+    <MinusCircle className="h-4 w-4 shrink-0" style={{ color: '#8B8FA8' }} />
+  ) : (
+    <XCircle className="h-4 w-4 shrink-0" style={{ color: '#F87171' }} />
+  )
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ border: `1px solid ${borderColor}` }}
+    >
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors"
+        style={{ background: 'rgba(255,255,255,0.03)' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)' }}
+      >
+        {iconEl}
+        <span className="text-xs shrink-0" style={{ color: '#8B8FA8' }}>Q{idx + 1}</span>
+        <span className="text-sm font-medium flex-1 truncate" style={{ color: '#F2F2F0' }}>
+          {q.text.length > 80 ? q.text.substring(0, 80) + '…' : q.text}
+        </span>
+        <span
+          className="text-xs px-2 py-0.5 rounded-full shrink-0 mx-2"
+          style={{
+            background: q.difficulty === 'EASY'
+              ? 'rgba(74,222,128,0.12)'
+              : q.difficulty === 'HARD'
+              ? 'rgba(248,113,113,0.12)'
+              : 'rgba(245,166,35,0.12)',
+            color: q.difficulty === 'EASY' ? '#4ADE80' : q.difficulty === 'HARD' ? '#F87171' : '#F5A623',
+          }}
+        >
+          {q.difficulty}
+        </span>
+        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.18 }}>
+          <ChevronDown className="h-4 w-4 shrink-0" style={{ color: '#8B8FA8' }} />
+        </motion.div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 pt-1 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              {/* Full question */}
+              <p className="text-sm font-medium" style={{ color: '#F2F2F0' }}>{q.text}</p>
+
+              {/* MCQ options */}
+              {q.options && (
+                <div className="space-y-1.5">
+                  {Object.entries(q.options as Record<string, string>).map(([key, val]) => {
+                    const isCorrectOpt = q.answer === key
+                    const isUserOpt    = q.userAnswer === key
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                        style={{
+                          background: isCorrectOpt
+                            ? 'rgba(74,222,128,0.10)'
+                            : isUserOpt && !isCorrectOpt
+                            ? 'rgba(248,113,113,0.10)'
+                            : 'rgba(255,255,255,0.03)',
+                          border: isCorrectOpt
+                            ? '1px solid rgba(74,222,128,0.3)'
+                            : isUserOpt && !isCorrectOpt
+                            ? '1px solid rgba(248,113,113,0.3)'
+                            : '1px solid transparent',
+                          color: isCorrectOpt ? '#4ADE80' : isUserOpt && !isCorrectOpt ? '#F87171' : '#8B8FA8',
+                        }}
+                      >
+                        <span
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                          style={{
+                            background: isCorrectOpt
+                              ? 'rgba(74,222,128,0.2)'
+                              : isUserOpt && !isCorrectOpt
+                              ? 'rgba(248,113,113,0.2)'
+                              : 'rgba(255,255,255,0.08)',
+                            color: isCorrectOpt ? '#4ADE80' : isUserOpt && !isCorrectOpt ? '#F87171' : '#8B8FA8',
+                          }}
+                        >
+                          {key}
+                        </span>
+                        <span className="flex-1">{val}</span>
+                        {isCorrectOpt && <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: '#4ADE80' }} />}
+                        {isUserOpt && !isCorrectOpt && <XCircle className="h-4 w-4 shrink-0" style={{ color: '#F87171' }} />}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Non-MCQ */}
+              {!q.options && (
+                <div className="space-y-1 text-sm">
+                  {!isSkipped && (
+                    <p style={{ color: isCorrect ? '#4ADE80' : '#F87171' }}>
+                      Your answer: <strong>{q.userAnswer}</strong>
+                    </p>
+                  )}
+                  {isSkipped && <p className="italic" style={{ color: '#8B8FA8' }}>Skipped</p>}
+                  {!isCorrect && (
+                    <p style={{ color: '#4ADE80' }}>Correct: <strong>{q.answer}</strong></p>
+                  )}
+                </div>
+              )}
+
+              {/* Topic */}
+              {q.topic && (
+                <p className="text-xs" style={{ color: '#8B8FA8' }}>Topic: {q.topic.title}</p>
+              )}
+
+              {/* Explanation */}
+              {q.explanation && (
+                <div
+                  className="rounded-lg p-3 text-sm"
+                  style={{
+                    background: 'rgba(0,229,204,0.07)',
+                    border: '1px solid rgba(0,229,204,0.2)',
+                    color: '#A7F3ED',
+                  }}
+                >
+                  <p className="font-semibold mb-0.5" style={{ color: '#00E5CC' }}>Explanation</p>
+                  <p>{q.explanation}</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 function TestResultPage() {
   const { sessionId }  = Route.useParams()
@@ -148,13 +308,12 @@ function TestResultPage() {
     retry: false,
   })
 
-  // ── Loading ───────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="max-w-3xl mx-auto space-y-4">
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
     )
   }
@@ -162,9 +321,9 @@ function TestResultPage() {
   if (isError || !result) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
-        <AlertCircle className="h-10 w-10 text-destructive" />
-        <p className="font-semibold">Result not available.</p>
-        <p className="text-sm text-muted-foreground">The test may still be in progress.</p>
+        <AlertCircle className="h-10 w-10" style={{ color: '#F87171' }} />
+        <p className="font-semibold" style={{ color: '#F2F2F0' }}>Result not available.</p>
+        <p className="text-sm" style={{ color: '#8B8FA8' }}>The test may still be in progress.</p>
         <Button variant="outline" onClick={() => navigate({ to: '/test' })}>
           Back to Tests
         </Button>
@@ -174,40 +333,40 @@ function TestResultPage() {
 
   const { score, correct, incorrect, unanswered, total, timeTakenSecs, examTitle, questions, analytics } = result
 
-  // ── Difficulty chart data ─────────────────────────────────────────────────
   const chartData = Object.entries(analytics?.byDifficulty ?? {}).map(([key, val]: [string, any]) => ({
-    name:     key.charAt(0) + key.slice(1).toLowerCase(), // 'Easy'
+    name:     key.charAt(0) + key.slice(1).toLowerCase(),
     accuracy: val.accuracy,
     correct:  val.correct,
     total:    val.total,
     fill:     DIFF_COLORS[key as keyof typeof DIFF_COLORS] ?? '#6366f1',
   }))
 
-  const isPassing  = (score ?? 0) >= 60
+  const isPassing   = (score ?? 0) >= 60
   const isHighScore = (score ?? 0) >= 80
+  const [c1]        = getScoreGradient(score ?? 0)
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-8">
 
-      {/* Confetti — only on high score */}
       {isHighScore && <Confetti />}
 
       {/* ── Score card ── */}
-      <Card>
+      <Card className="glass-card border-0" style={{ borderRadius: 20 }}>
         <CardContent className="pt-6">
           <div className="text-center mb-6">
-            {/* Animated score ring replaces the plain trophy + big number */}
             <AnimatedScoreRing score={score ?? 0} />
             <motion.h2
               className="text-2xl font-bold mt-4"
+              style={{ fontFamily: '"Playfair Display", Georgia, serif', color: '#F2F2F0' }}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
-              {isHighScore ? '🎉 Excellent work!' : isPassing ? 'Test Complete!' : 'Test Complete'}
+              {isHighScore ? 'Excellent work!' : isPassing ? 'Test Complete!' : 'Test Complete'}
             </motion.h2>
             <motion.p
-              className="text-muted-foreground mt-0.5"
+              className="mt-0.5"
+              style={{ color: '#8B8FA8' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.55 }}
@@ -219,56 +378,63 @@ function TestResultPage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.7, type: 'spring', stiffness: 300, damping: 20 }}
             >
-              <Badge
-                className="mt-3 text-sm px-3"
-                variant={isPassing ? 'default' : 'destructive'}
+              <span
+                className="inline-block mt-3 text-sm px-4 py-1.5 rounded-full font-semibold"
+                style={{
+                  background: isPassing ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)',
+                  color:      isPassing ? '#4ADE80' : '#F87171',
+                  border:     `1px solid ${isPassing ? 'rgba(74,222,128,0.35)' : 'rgba(248,113,113,0.35)'}`,
+                }}
               >
-                {isPassing ? '✓ Pass' : '✗ Fail'} · {getScoreLabel(score ?? 0)}
-              </Badge>
+                {isPassing ? '✓ Pass' : '✗ Fail'}
+              </span>
             </motion.div>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-5">
+          <div
+            className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center pt-5"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+          >
             <div>
-              <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+              <div className="flex items-center justify-center gap-1 mb-1" style={{ color: '#8B8FA8' }}>
                 <Target className="h-4 w-4" />
                 <span className="text-xs">Correct</span>
               </div>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-2xl font-bold" style={{ color: '#4ADE80' }}>
                 <CountUp end={correct} duration={1.2} enableScrollSpy scrollSpyOnce />
               </p>
-              <p className="text-xs text-muted-foreground">of {total}</p>
+              <p className="text-xs" style={{ color: '#8B8FA8' }}>of {total}</p>
             </div>
             <div>
-              <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+              <div className="flex items-center justify-center gap-1 mb-1" style={{ color: '#8B8FA8' }}>
                 <XCircle className="h-4 w-4" />
                 <span className="text-xs">Wrong</span>
               </div>
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-2xl font-bold" style={{ color: '#F87171' }}>
                 <CountUp end={incorrect} duration={1.2} enableScrollSpy scrollSpyOnce />
               </p>
-              <p className="text-xs text-muted-foreground">of {total}</p>
+              <p className="text-xs" style={{ color: '#8B8FA8' }}>of {total}</p>
             </div>
             <div>
-              <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+              <div className="flex items-center justify-center gap-1 mb-1" style={{ color: '#8B8FA8' }}>
                 <MinusCircle className="h-4 w-4" />
                 <span className="text-xs">Skipped</span>
               </div>
-              <p className="text-2xl font-bold text-muted-foreground">
+              <p className="text-2xl font-bold" style={{ color: '#8B8FA8' }}>
                 <CountUp end={unanswered} duration={1.2} enableScrollSpy scrollSpyOnce />
               </p>
-              <p className="text-xs text-muted-foreground">of {total}</p>
+              <p className="text-xs" style={{ color: '#8B8FA8' }}>of {total}</p>
             </div>
             <div>
-              <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+              <div className="flex items-center justify-center gap-1 mb-1" style={{ color: '#8B8FA8' }}>
                 <Clock className="h-4 w-4" />
                 <span className="text-xs">Time</span>
               </div>
-              <p className="text-2xl font-bold">
+              <p className="text-2xl font-bold" style={{ color: '#F2F2F0' }}>
                 {timeTakenSecs ? formatSeconds(timeTakenSecs) : '—'}
               </p>
-              <p className="text-xs text-muted-foreground">total</p>
+              <p className="text-xs" style={{ color: '#8B8FA8' }}>total</p>
             </div>
           </div>
         </CardContent>
@@ -276,9 +442,9 @@ function TestResultPage() {
 
       {/* ── Difficulty breakdown chart ── */}
       {chartData.length > 0 && (
-        <Card>
+        <Card className="glass-card border-0" style={{ borderRadius: 20 }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Performance by Difficulty</CardTitle>
+            <CardTitle className="text-base" style={{ color: '#F2F2F0' }}>Performance by Difficulty</CardTitle>
           </CardHeader>
           <CardContent>
             <HighchartsReact
@@ -290,6 +456,7 @@ function TestResultPage() {
                   type: 'column',
                   height: 200,
                   margin: [10, 10, 30, 44],
+                  backgroundColor: 'transparent',
                 },
                 xAxis: {
                   ...chartTheme(isDark).xAxis,
@@ -297,8 +464,7 @@ function TestResultPage() {
                 },
                 yAxis: {
                   ...chartTheme(isDark).yAxis,
-                  min: 0,
-                  max: 100,
+                  min: 0, max: 100,
                   labels: {
                     ...(chartTheme(isDark).yAxis as Highcharts.YAxisOptions)?.labels,
                     formatter() { return `${this.value}%` },
@@ -327,8 +493,7 @@ function TestResultPage() {
                 }],
               } as Highcharts.Options}
             />
-            {/* Legend row */}
-            <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
+            <div className="flex justify-center gap-4 mt-2 text-xs" style={{ color: '#8B8FA8' }}>
               {chartData.map(d => (
                 <span key={d.name} className="flex items-center gap-1">
                   <span className="h-2.5 w-2.5 rounded-sm inline-block" style={{ backgroundColor: d.fill }} />
@@ -340,140 +505,48 @@ function TestResultPage() {
         </Card>
       )}
 
-      {/* ── Question-by-question review ── */}
+      {/* ── Question review ── */}
       <div>
-        <h2 className="text-lg font-semibold mb-3">Question Review</h2>
-        <Accordion type="multiple" className="space-y-2">
-          {(questions ?? []).map((q: any, i: number) => {
-            const isCorrect = q.isCorrect
-            const isSkipped = q.userAnswer === null || q.userAnswer === undefined
-            const statusIcon = isCorrect ? (
-              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-            ) : isSkipped ? (
-              <MinusCircle className="h-4 w-4 text-muted-foreground shrink-0" />
-            ) : (
-              <XCircle className="h-4 w-4 text-red-500 shrink-0" />
-            )
-
-            return (
-              <AccordionItem
-                key={q.id}
-                value={q.id}
-                className={cn(
-                  'border rounded-lg px-0 overflow-hidden',
-                  isCorrect
-                    ? 'border-green-200 dark:border-green-800'
-                    : isSkipped
-                    ? 'border-border'
-                    : 'border-red-200 dark:border-red-800'
-                )}
-              >
-                <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/30">
-                  <div className="flex items-center gap-2 text-left flex-1 min-w-0">
-                    {statusIcon}
-                    <span className="text-xs text-muted-foreground shrink-0">Q{i + 1}</span>
-                    <span className="text-sm font-medium truncate">
-                      {q.text.length > 80 ? q.text.substring(0, 80) + '…' : q.text}
-                    </span>
-                    <Badge variant="outline" className="ml-auto text-xs shrink-0">
-                      {q.difficulty}
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                  {/* Full question */}
-                  <p className="text-sm font-medium mb-3">{q.text}</p>
-
-                  {/* MCQ options */}
-                  {q.options && (
-                    <div className="space-y-1.5 mb-3">
-                      {Object.entries(q.options as Record<string, string>).map(([key, val]) => {
-                        const isCorrectOpt = q.answer === key
-                        const isUserOpt    = q.userAnswer === key
-                        return (
-                          <div
-                            key={key}
-                            className={cn(
-                              'flex items-center gap-2 px-3 py-2 rounded-md text-sm border',
-                              isCorrectOpt
-                                ? 'border-green-400 bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300'
-                                : isUserOpt && !isCorrectOpt
-                                ? 'border-red-400 bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300'
-                                : 'border-transparent bg-muted/30'
-                            )}
-                          >
-                            <span className="w-5 h-5 rounded-full border flex items-center justify-center text-xs font-semibold shrink-0">
-                              {key}
-                            </span>
-                            <span className="flex-1">{val}</span>
-                            {isCorrectOpt && (
-                              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                            )}
-                            {isUserOpt && !isCorrectOpt && (
-                              <XCircle className="h-4 w-4 text-red-500 shrink-0" />
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-
-                  {/* Non-MCQ answers */}
-                  {!q.options && (
-                    <div className="space-y-1 text-sm mb-3">
-                      {!isSkipped && (
-                        <p className={isCorrect ? 'text-green-600' : 'text-red-600'}>
-                          Your answer: <strong>{q.userAnswer}</strong>
-                        </p>
-                      )}
-                      {isSkipped && (
-                        <p className="text-muted-foreground italic">Skipped</p>
-                      )}
-                      {!isCorrect && (
-                        <p className="text-green-600">
-                          Correct answer: <strong>{q.answer}</strong>
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Topic badge */}
-                  {q.topic && (
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Topic: {q.topic.title}
-                    </p>
-                  )}
-
-                  {/* Explanation */}
-                  {q.explanation && (
-                    <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md p-3 text-sm text-blue-800 dark:text-blue-200">
-                      <p className="font-medium mb-0.5">Explanation</p>
-                      <p>{q.explanation}</p>
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            )
-          })}
-        </Accordion>
+        <h2
+          className="text-lg font-semibold mb-3"
+          style={{ fontFamily: '"Playfair Display", Georgia, serif', color: '#F2F2F0' }}
+        >
+          Question Review
+        </h2>
+        <div className="space-y-2">
+          {(questions ?? []).map((q: any, i: number) => (
+            <QuestionRow key={q.id} q={q} idx={i} />
+          ))}
+        </div>
       </div>
 
       {/* ── Action buttons ── */}
       <div className="flex flex-wrap gap-3">
         <Link to="/test">
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            style={{ borderColor: 'rgba(255,255,255,0.12)', color: '#8B8FA8', background: 'transparent' }}
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             All Tests
           </Button>
         </Link>
         <Link to="/test/setup">
-          <Button>
+          <Button
+            className="ep-shimmer-btn ds-btn-shimmer"
+            style={{ background: 'linear-gradient(135deg, #00E5CC, #00B8A5)', color: '#0D0F1A', border: 'none', fontWeight: 600 }}
+          >
             <RotateCcw className="h-4 w-4 mr-2" />
             New Test
           </Button>
         </Link>
         <Link to="/">
-          <Button variant="ghost">Back to Dashboard</Button>
+          <Button
+            variant="ghost"
+            style={{ color: '#8B8FA8' }}
+          >
+            Back to Dashboard
+          </Button>
         </Link>
       </div>
     </div>

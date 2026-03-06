@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import type { Question } from '@/types'
@@ -13,13 +12,14 @@ interface Props {
   questionNumber: number
 }
 
-const DIFF_COLORS = {
-  EASY:   'bg-green-100 text-green-700',
-  MEDIUM: 'bg-yellow-100 text-yellow-700',
-  HARD:   'bg-red-100 text-red-700',
+// ── Difficulty badge styles ────────────────────────────────────────────────────
+const DIFF_STYLE: Record<string, { background: string; color: string; border: string }> = {
+  EASY:   { background: 'rgba(74,222,128,0.12)', color: '#4ADE80', border: '1px solid rgba(74,222,128,0.3)' },
+  MEDIUM: { background: 'rgba(245,166,35,0.12)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' },
+  HARD:   { background: 'rgba(248,113,113,0.12)', color: '#F87171', border: '1px solid rgba(248,113,113,0.3)' },
 }
 
-// ─── Ripple hook ──────────────────────────────────────────────────────────────
+// ── Ripple hook ────────────────────────────────────────────────────────────────
 
 interface Ripple { id: number; x: number; y: number }
 
@@ -29,7 +29,7 @@ function useRipple() {
 
   const spawnRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
-    const id   = ++counter.current
+    const id = ++counter.current
     setRipples(prev => [...prev, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }])
     setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 600)
   }
@@ -37,18 +37,20 @@ function useRipple() {
   return { ripples, spawnRipple }
 }
 
-// ─── Option button with ripple ────────────────────────────────────────────────
+// ── Option button ─────────────────────────────────────────────────────────────
 
 interface OptionBtnProps {
   optKey: string
   value: string
-  variant: string
+  variantClass: string
+  variantStyle: React.CSSProperties
   disabled: boolean
+  isSelected: boolean
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void
   children: React.ReactNode
 }
 
-function OptionButton({ optKey, value, variant, disabled, onClick, children }: OptionBtnProps) {
+function OptionButton({ optKey, value, variantClass, variantStyle, disabled, isSelected, onClick, children }: OptionBtnProps) {
   const { ripples, spawnRipple } = useRipple()
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -60,17 +62,24 @@ function OptionButton({ optKey, value, variant, disabled, onClick, children }: O
     <button
       disabled={disabled}
       onClick={handleClick}
-      className={cn(
-        'w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center gap-3 relative overflow-hidden',
-        variant
-      )}
+      className={cn('quiz-option w-full text-left px-4 py-3.5 rounded-xl text-sm flex items-center gap-3 relative overflow-hidden', variantClass)}
+      style={{
+        border: '1px solid rgba(255,255,255,0.09)',
+        color: '#C8CCEA',
+        background: 'rgba(255,255,255,0.03)',
+        ...variantStyle,
+      }}
     >
-      {/* Ripple elements */}
+      {/* Ripple effect */}
       {ripples.map(r => (
         <span
           key={r.id}
-          className="animate-ripple absolute rounded-full bg-primary/25 pointer-events-none"
-          style={{ width: 24, height: 24, left: r.x - 12, top: r.y - 12 }}
+          className="animate-ripple absolute rounded-full pointer-events-none"
+          style={{
+            width: 24, height: 24,
+            left: r.x - 12, top: r.y - 12,
+            background: 'rgba(0,229,204,0.25)',
+          }}
         />
       ))}
       {children}
@@ -78,7 +87,7 @@ function OptionButton({ optKey, value, variant, disabled, onClick, children }: O
   )
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ── Main component ─────────────────────────────────────────────────────────────
 
 export function QuestionCard({ question, selectedAnswer, onAnswer, isRevealed, questionNumber }: Props) {
   const options = question.options
@@ -87,52 +96,99 @@ export function QuestionCard({ question, selectedAnswer, onAnswer, isRevealed, q
     ? [['True', 'True'], ['False', 'False']]
     : []
 
+  const diffStyle = DIFF_STYLE[question.difficulty] ?? DIFF_STYLE.MEDIUM
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">Question {questionNumber}</span>
+    <Card className="glass-card border-0" style={{ borderRadius: 20 }}>
+      <CardHeader className="pb-2">
+        {/* ── Question meta row ── */}
+        <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className={cn('text-xs', DIFF_COLORS[question.difficulty])}>
+            <span
+              className="text-xs font-semibold uppercase tracking-widest"
+              style={{ color: '#8B8FA8' }}
+            >
+              Question {questionNumber}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Difficulty badge */}
+            <span
+              className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
+              style={diffStyle}
+            >
               {question.difficulty}
-            </Badge>
-            <Badge variant="outline" className="text-xs">{question.type.replace('_', ' ')}</Badge>
+            </span>
+            {/* Type badge */}
+            <span
+              className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.07)', color: '#8B8FA8', border: '1px solid rgba(255,255,255,0.1)' }}
+            >
+              {question.type.replace('_', ' ')}
+            </span>
           </div>
         </div>
-        <CardTitle className="text-base font-medium leading-relaxed mt-2">
+
+        {/* ── Question text ── */}
+        <p
+          className="text-base leading-relaxed font-medium"
+          style={{ color: '#F2F2F0', lineHeight: 1.65 }}
+        >
           {question.text}
-        </CardTitle>
+        </p>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="pt-2">
         {question.type === 'FILL_IN_BLANK' ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <input
               type="text"
               placeholder="Type your answer..."
               value={selectedAnswer || ''}
               onChange={(e) => onAnswer(e.target.value)}
               disabled={isRevealed}
-              className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+              className="w-full px-4 py-3 text-sm rounded-xl transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#F2F2F0',
+                outline: 'none',
+              }}
+              onFocus={e => { (e.target as HTMLElement).style.borderColor = 'rgba(0,229,204,0.5)'; (e.target as HTMLElement).style.boxShadow = '0 0 0 2px rgba(0,229,204,0.1)' }}
+              onBlur={e => { (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; (e.target as HTMLElement).style.boxShadow = 'none' }}
             />
             {isRevealed && (
-              <p className="text-sm text-green-600 font-medium">
-                Correct answer: {question.answer}
-              </p>
+              <div
+                className="flex items-center gap-2 p-3 rounded-xl text-sm"
+                style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)' }}
+              >
+                <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: '#4ADE80' }} />
+                <span style={{ color: '#4ADE80' }}>Correct answer: {question.answer}</span>
+              </div>
             )}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {options.map(([key, value]) => {
               const isSelected = selectedAnswer === key
               const isCorrect  = question.answer === key
-              let variant = 'border bg-background hover:bg-accent cursor-pointer'
+
+              let variantClass = ''
+              let variantStyle: React.CSSProperties = {}
 
               if (isRevealed) {
-                if (isCorrect)                   variant = 'border-2 border-green-500 bg-green-50 text-green-700'
-                else if (isSelected && !isCorrect) variant = 'border-2 border-red-500 bg-red-50 text-red-700'
-                else                             variant = 'border bg-background opacity-60'
+                if (isCorrect) {
+                  variantClass = 'quiz-option-correct'
+                  variantStyle = {}
+                } else if (isSelected && !isCorrect) {
+                  variantClass = 'quiz-option-wrong'
+                  variantStyle = {}
+                } else {
+                  variantStyle = { opacity: 0.45 }
+                }
               } else if (isSelected) {
-                variant = 'border-2 border-primary bg-primary/5'
+                variantClass = 'quiz-option-selected'
+                variantStyle = {}
               }
 
               return (
@@ -140,19 +196,33 @@ export function QuestionCard({ question, selectedAnswer, onAnswer, isRevealed, q
                   key={key}
                   optKey={key}
                   value={value}
-                  variant={variant}
+                  variantClass={variantClass}
+                  variantStyle={variantStyle}
                   disabled={!!isRevealed}
+                  isSelected={isSelected}
                   onClick={() => !isRevealed && onAnswer(key)}
                 >
-                  <span className="w-6 h-6 rounded-full border flex items-center justify-center shrink-0 text-xs font-semibold">
+                  {/* Option key circle */}
+                  <span
+                    className="ds-q-num"
+                    style={
+                      isSelected && !isRevealed
+                        ? { borderColor: '#00E5CC', background: 'rgba(0,229,204,0.15)', color: '#00E5CC' }
+                        : isRevealed && isCorrect
+                        ? { borderColor: '#4ADE80', background: 'rgba(74,222,128,0.15)', color: '#4ADE80' }
+                        : isRevealed && isSelected && !isCorrect
+                        ? { borderColor: '#F87171', background: 'rgba(248,113,113,0.15)', color: '#F87171' }
+                        : {}
+                    }
+                  >
                     {key}
                   </span>
                   <span className="flex-1">{value}</span>
                   {isRevealed && isCorrect && (
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: '#4ADE80' }} />
                   )}
                   {isRevealed && isSelected && !isCorrect && (
-                    <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+                    <XCircle className="h-4 w-4 shrink-0" style={{ color: '#F87171' }} />
                   )}
                 </OptionButton>
               )
@@ -160,10 +230,17 @@ export function QuestionCard({ question, selectedAnswer, onAnswer, isRevealed, q
           </div>
         )}
 
+        {/* ── Explanation panel ── */}
         {isRevealed && question.explanation && (
-          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-800 dark:text-blue-200">
-            <p className="font-medium mb-1">Explanation</p>
-            <p>{question.explanation}</p>
+          <div
+            className="mt-4 p-4 rounded-xl text-sm"
+            style={{
+              background: 'rgba(0,229,204,0.07)',
+              border: '1px solid rgba(0,229,204,0.2)',
+            }}
+          >
+            <p className="font-semibold mb-1.5" style={{ color: '#00E5CC' }}>Explanation</p>
+            <p style={{ color: '#C8CCEA', lineHeight: 1.6 }}>{question.explanation}</p>
           </div>
         )}
       </CardContent>

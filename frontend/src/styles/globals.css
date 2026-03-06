@@ -3,49 +3,53 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Light mode — clean slate ── */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 220 20% 98%;
+    --foreground: 231 33% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 231 33% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --popover-foreground: 231 33% 10%;
+    --primary: 174 100% 38%;          /* teal — slightly deeper for light bg */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 94%;
+    --secondary-foreground: 231 33% 20%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 220 14% 90%;
+    --accent-foreground: 231 33% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 14% 88%;
+    --input: 220 14% 92%;
+    --ring: 174 100% 38%;
+    --radius: 0.75rem;
   }
 
+  /* ── Dark mode — "Dark Academic × Futuristic Lab" ── */
+  /* These variables power ALL dark-mode pages (dashboard, quiz, progress…) */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --background:          231 33% 8%;   /* #0D0F1A deep navy */
+    --foreground:          60  3% 95%;   /* #F2F2F0 warm white */
+    --card:                231 28% 11%;  /* slightly lighter navy */
+    --card-foreground:     60  3% 95%;
+    --popover:             231 28% 11%;
+    --popover-foreground:  60  3% 95%;
+    --primary:             174 100% 45%; /* #00E5CC electric teal */
+    --primary-foreground:  231 33% 8%;   /* dark for text on teal button */
+    --secondary:           231 25% 15%;
+    --secondary-foreground:60  3% 95%;
+    --muted:               231 25% 15%;
+    --muted-foreground:    232 14% 60%;  /* #8B8FA8 */
+    --accent:              231 25% 17%;
+    --accent-foreground:   60  3% 95%;
+    --destructive:         0   72% 51%;
+    --destructive-foreground: 60 3% 95%;
+    --border:              231 20% 18%;
+    --input:               231 28% 12%;
+    --ring:                174 100% 45%; /* teal focus ring */
+    --radius:              0.75rem;
   }
 }
 
@@ -61,6 +65,562 @@
     @apply font-semibold;
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   AUTH DARK THEME — "Dark Academic × Futuristic Lab"
+   Scoped to .auth-dark so it never bleeds into the
+   dashboard or admin pages.
+   ═══════════════════════════════════════════════════ */
+
+/* ── CSS variable scope override ── */
+/* All shadcn/ui components inside .auth-dark inherit these */
+.auth-dark {
+  /* Background: deep navy #0D0F1A ≈ hsl(231,33%,8%) */
+  --background:          231 33% 8%;
+  --foreground:          60  3% 95%;   /* warm white #F2F2F0 */
+  --card:                231 28% 11%;
+  --card-foreground:     60  3% 95%;
+  --popover:             231 28% 11%;
+  --popover-foreground:  60  3% 95%;
+  /* Primary: electric teal #00E5CC = hsl(174,100%,45%) */
+  --primary:             174 100% 45%;
+  --primary-foreground:  231 33% 8%;
+  --secondary:           231 25% 15%;
+  --secondary-foreground:60  3% 95%;
+  --muted:               231 25% 15%;
+  /* Muted: #8B8FA8 ≈ hsl(232,14%,60%) */
+  --muted-foreground:    232 14% 60%;
+  --accent:              231 25% 17%;
+  --accent-foreground:   60  3% 95%;
+  --border:              231 20% 20%;
+  --input:               231 28% 12%;
+  --ring:                174 100% 45%; /* teal focus ring */
+  --radius:              0.75rem;
+}
+
+/* ── Body font for auth pages ── */
+.auth-dark {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: #F2F2F0;
+}
+
+/* ── Animated gradient heading text ── */
+.ep-gradient-text {
+  background: linear-gradient(90deg, #00E5CC 0%, #F5A623 50%, #00E5CC 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ep-gradient-shift 5s ease infinite;
+  display: inline-block;
+}
+
+@keyframes ep-gradient-shift {
+  0%, 100% { background-position: 0% center; }
+  50%       { background-position: 100% center; }
+}
+
+/* ── Floating ambient orbs (CSS-only, no JS) ── */
+.ep-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Teal orb — top-right */
+.ep-orb-teal-1 {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(0,229,204,0.14) 0%, transparent 70%);
+  filter: blur(80px);
+  top: -160px;
+  right: -120px;
+  animation: ep-float-1 14s ease-in-out infinite;
+}
+
+/* Amber orb — bottom-left */
+.ep-orb-amber-1 {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(245,166,35,0.10) 0%, transparent 70%);
+  filter: blur(90px);
+  bottom: -100px;
+  left: 5%;
+  animation: ep-float-2 19s ease-in-out infinite;
+}
+
+/* Teal orb — center */
+.ep-orb-teal-2 {
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(0,229,204,0.07) 0%, transparent 70%);
+  filter: blur(60px);
+  top: 40%;
+  left: 48%;
+  animation: ep-float-3 23s ease-in-out infinite;
+}
+
+@keyframes ep-float-1 {
+  0%, 100% { transform: translate(0,    0)   scale(1);    }
+  33%       { transform: translate(-35px, 25px) scale(1.07); }
+  66%       { transform: translate(22px, -18px) scale(0.94); }
+}
+@keyframes ep-float-2 {
+  0%, 100% { transform: translate(0,    0)    scale(1);    }
+  33%       { transform: translate(30px, -40px) scale(1.06); }
+  66%       { transform: translate(-18px, 28px) scale(0.95); }
+}
+@keyframes ep-float-3 {
+  0%, 100% { transform: translate(0,    0);    }
+  50%       { transform: translate(45px, -55px); }
+}
+
+/* ── Dot grid texture overlay ── */
+.ep-dot-grid-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Logo icon pill ── */
+.ep-logo-icon {
+  width: 40px;
+  height: 40px;
+  background: #00E5CC;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 22px rgba(0,229,204,0.40), 0 0 6px rgba(0,229,204,0.20);
+  flex-shrink: 0;
+  transition: box-shadow 0.3s;
+}
+.ep-logo-icon-sm {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+/* ── Stat glass cards ── */
+.ep-stat-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 16px 20px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background 0.25s, border-color 0.25s, transform 0.25s;
+}
+.ep-stat-card:hover {
+  background: rgba(0,229,204,0.07);
+  border-color: rgba(0,229,204,0.22);
+  transform: translateY(-2px);
+}
+.ep-stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #F2F2F0;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.ep-stat-label {
+  font-size: 12px;
+  color: #8B8FA8;
+  margin-top: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Feature list bullet ── */
+.ep-check-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00E5CC;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(0,229,204,0.55);
+}
+
+/* ── Badge pill (login form) ── */
+.ep-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(0,229,204,0.10);
+  border: 1px solid rgba(0,229,204,0.22);
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: 12px;
+  color: #00E5CC;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* ── Sign-in button with shimmer ── */
+/* Works on top of the CSS-var teal bg-primary */
+.ep-shimmer-btn {
+  position: relative;
+  overflow: hidden;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 0 24px rgba(0,229,204,0.28), 0 4px 12px rgba(0,0,0,0.4) !important;
+  height: 48px !important;
+}
+.ep-shimmer-btn:hover:not(:disabled) {
+  box-shadow: 0 0 42px rgba(0,229,204,0.45), 0 6px 18px rgba(0,0,0,0.4) !important;
+  transform: translateY(-1px) !important;
+}
+.ep-shimmer-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98) !important;
+}
+/* Sweep-light shimmer overlay */
+.ep-shimmer-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  transform: skewX(-18deg);
+  animation: ep-shimmer 2.6s ease-in-out infinite;
+}
+@keyframes ep-shimmer {
+  0%   { left: -80%; }
+  100% { left: 160%; }
+}
+
+/* ── Teal text link ── */
+.ep-link-teal {
+  color: #00E5CC;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+.ep-link-teal:hover {
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
+/* ── Divider with label ── */
+.ep-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #8B8FA8;
+  font-size: 13px;
+}
+.ep-divider::before,
+.ep-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+
+/* ── Enhanced teal focus ring for auth inputs ── */
+.auth-dark input:focus {
+  box-shadow:
+    var(--tw-ring-offset-shadow, 0 0 #0000),
+    var(--tw-ring-shadow, 0 0 #0000),
+    0 0 18px rgba(0,229,204,0.18) !important;
+}
+
+/* ── Scrollbar within auth-dark ── */
+.auth-dark ::-webkit-scrollbar-thumb { background: rgba(0,229,204,0.3); }
+
+/* ════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════
+   DASHBOARD DARK THEME UTILITIES
+   Shared across sidebar, header, cards, quiz, progress.
+   Class names prefixed with `ds-` (dashboard).
+   ═══════════════════════════════════════════════════ */
+
+/* ── Glass card — main card primitive ── */
+/* Applied OVER shadcn Card via className; backdrop only works if parent has no overflow:hidden */
+.glass-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background 0.25s, border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(0, 229, 204, 0.14) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 229, 204, 0.06);
+}
+
+/* Light-mode glass */
+.light .glass-card,
+:root:not(.dark) .glass-card {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  backdrop-filter: blur(16px);
+}
+
+/* ── Glow icon badges — replaces colored bg/text combos ── */
+.ds-icon-teal   { background: rgba(0, 229, 204, 0.15); color: #00E5CC; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: center; }
+.ds-icon-amber  { background: rgba(245,166, 35, 0.15); color: #F5A623; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: center; }
+.ds-icon-green  { background: rgba( 34,197, 94, 0.15); color: #4ADE80; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: center; }
+.ds-icon-red    { background: rgba(239, 68, 68, 0.15); color: #F87171; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: center; }
+.ds-icon-purple { background: rgba(167, 85,247, 0.15); color: #C084FC; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: center; }
+.ds-icon-blue   { background: rgba( 59,130,246, 0.15); color: #60A5FA; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: center; }
+
+/* Glow on hover */
+.ds-icon-teal:hover   { box-shadow: 0 0 18px rgba(0,229,204,0.35); }
+.ds-icon-amber:hover  { box-shadow: 0 0 18px rgba(245,166,35,0.35); }
+.ds-icon-green:hover  { box-shadow: 0 0 18px rgba(74,222,128,0.35); }
+
+/* ── Sidebar nav ── */
+/* Glass left-sidebar panel */
+.ds-sidebar {
+  background: rgba(13, 15, 26, 0.95);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Active nav item glow */
+.ds-nav-active {
+  background: rgba(0, 229, 204, 0.10) !important;
+  border-left-color: #00E5CC !important;
+  color: #00E5CC !important;
+  box-shadow: inset 4px 0 12px rgba(0, 229, 204, 0.08);
+}
+.ds-nav-active svg { filter: drop-shadow(0 0 4px rgba(0,229,204,0.5)); }
+
+/* Nav item hover */
+.ds-nav-item {
+  transition: background 0.15s, color 0.15s, transform 0.15s, border-color 0.15s;
+}
+.ds-nav-item:hover:not(.ds-nav-active) {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-left-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateX(2px);
+}
+
+/* ── Header blur backdrop ── */
+.ds-header {
+  background: rgba(13, 15, 26, 0.85) !important;
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ── Search modal ── */
+.ds-search-modal {
+  background: rgba(18, 20, 35, 0.96) !important;
+  border: 1px solid rgba(0, 229, 204, 0.15) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0,229,204,0.08);
+}
+.ds-search-result-active { background: rgba(0, 229, 204, 0.08) !important; }
+.ds-search-result-active svg { color: #00E5CC; }
+
+/* ── Gradient progress bars ── */
+.progress-teal > div { background: linear-gradient(90deg, #00B8A5 0%, #00E5CC 100%) !important; }
+.progress-amber > div { background: linear-gradient(90deg, #E08B10 0%, #F5A623 100%) !important; }
+
+/* ── Stat number gradient ── */
+.ds-stat-number {
+  background: linear-gradient(135deg, #F2F2F0 30%, #00E5CC 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Quiz option button states ── */
+.quiz-option {
+  position: relative;
+  overflow: hidden;
+  transition: background 0.18s, border-color 0.18s, transform 0.12s, box-shadow 0.18s;
+}
+.quiz-option:not(:disabled):hover {
+  transform: translateX(3px);
+  border-color: rgba(0, 229, 204, 0.4) !important;
+  background: rgba(0, 229, 204, 0.06) !important;
+}
+.quiz-option-selected {
+  border-color: #00E5CC !important;
+  background: rgba(0, 229, 204, 0.12) !important;
+  box-shadow: 0 0 0 1px rgba(0,229,204,0.3), 0 4px 16px rgba(0,229,204,0.15) !important;
+}
+.quiz-option-correct {
+  border-color: #22C55E !important;
+  background: rgba(34, 197, 94, 0.12) !important;
+  box-shadow: 0 0 0 1px rgba(34,197,94,0.3) !important;
+}
+.quiz-option-wrong {
+  border-color: #EF4444 !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  box-shadow: 0 0 0 1px rgba(239,68,68,0.3) !important;
+}
+
+/* ── Question number circle ── */
+.ds-q-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.ds-q-num-selected {
+  border-color: #00E5CC;
+  background: rgba(0,229,204,0.15);
+  color: #00E5CC;
+}
+
+/* ── Quiz nav dot ── */
+.quiz-dot {
+  transition: background 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+.quiz-dot:hover { transform: scale(1.1); }
+.quiz-dot-current {
+  background: #00E5CC !important;
+  box-shadow: 0 0 12px rgba(0,229,204,0.5) !important;
+  color: #0D0F1A !important;
+}
+.quiz-dot-answered {
+  background: rgba(34,197,94,0.25) !important;
+  color: #4ADE80 !important;
+  border-color: rgba(34,197,94,0.4) !important;
+}
+.quiz-dot-flagged {
+  background: rgba(245,166,35,0.2) !important;
+  color: #F5A623 !important;
+  border-color: rgba(245,166,35,0.4) !important;
+}
+
+/* ── Timer ── */
+.ds-timer {
+  font-family: 'DM Sans', monospace;
+  font-variant-numeric: tabular-nums;
+  transition: all 0.5s;
+}
+.ds-timer-urgent {
+  color: #F87171 !important;
+  border-color: rgba(239,68,68,0.4) !important;
+  background: rgba(239,68,68,0.08) !important;
+  box-shadow: 0 0 16px rgba(239,68,68,0.2);
+  animation: timer-pulse 1s ease-in-out infinite;
+}
+.ds-timer-warning {
+  color: #F5A623 !important;
+  border-color: rgba(245,166,35,0.4) !important;
+  background: rgba(245,166,35,0.08) !important;
+}
+@keyframes timer-pulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(239,68,68,0.2); }
+  50%       { box-shadow: 0 0 28px rgba(239,68,68,0.5); }
+}
+
+/* ── Exam card ── */
+.exam-card {
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s, border-color 0.25s;
+}
+.exam-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,229,204,0.12);
+  border-color: rgba(0,229,204,0.2) !important;
+}
+
+/* ── Category badge chips ── */
+.cat-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.cat-engineering  { background: rgba(0,229,204,0.12); color: #00E5CC; border: 1px solid rgba(0,229,204,0.25); }
+.cat-competitive  { background: rgba(245,166,35,0.12); color: #F5A623; border: 1px solid rgba(245,166,35,0.25); }
+.cat-technical    { background: rgba(167,85,247,0.12); color: #C084FC; border: 1px solid rgba(167,85,247,0.25); }
+.cat-default      { background: rgba(255,255,255,0.08); color: #8B8FA8; border: 1px solid rgba(255,255,255,0.12); }
+
+/* ── Streak card ── */
+.streak-number {
+  background: linear-gradient(135deg, #FF8C42 0%, #FF3D00 60%, #F5A623 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 20px rgba(255,140,66,0.4));
+}
+.streak-bar-active { background: linear-gradient(to top, #FF8C42, #F5A623) !important; }
+.streak-bar-today { background: rgba(245,166,35,0.3) !important; border: 1px dashed rgba(245,166,35,0.5); }
+
+/* ── Welcome banner ── */
+.ds-welcome-banner {
+  background: linear-gradient(135deg, rgba(0,229,204,0.08) 0%, rgba(245,166,35,0.05) 100%);
+  border: 1px solid rgba(0,229,204,0.18);
+  box-shadow: 0 4px 24px rgba(0,229,204,0.06), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* ── Page stagger entrance ── */
+@keyframes ds-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.ds-stagger > * {
+  animation: ds-slide-up 0.4s ease-out both;
+}
+.ds-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.ds-stagger > *:nth-child(2) { animation-delay: 0.10s; }
+.ds-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.ds-stagger > *:nth-child(4) { animation-delay: 0.20s; }
+.ds-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.ds-stagger > *:nth-child(6) { animation-delay: 0.30s; }
+
+/* ── Card hover lift (for all cards on hover) ── */
+.card-lift {
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,229,204,0.08);
+}
+
+/* ── Shimmer button (dashboard version, adapts to bg-primary) ── */
+.ds-btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.ds-btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  transform: skewX(-18deg);
+  animation: ep-shimmer 3s ease-in-out infinite;
+}
+
+/* ── Progress page stats ── */
+.progress-stat-card {
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.progress-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0,229,204,0.2) !important;
+}
+
+/* ════════════════════════════════════════════════════ */
 
 /* Scrollbar */
 ::-webkit-scrollbar {

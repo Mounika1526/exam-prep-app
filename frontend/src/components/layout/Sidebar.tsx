@@ -30,15 +30,33 @@ export function Sidebar() {
 
   return (
     <TooltipProvider delayDuration={400}>
-      <aside className="hidden md:flex flex-col w-64 border-r bg-card shrink-0">
-        {/* Logo */}
-        <div className="flex items-center gap-2 px-6 py-5 border-b">
-          <BookOpen className="h-7 w-7 text-primary" />
-          <span className="text-xl font-bold">ExamPrep</span>
+      {/* ── Sidebar container — glass dark panel ── */}
+      <aside className="hidden md:flex flex-col w-64 ds-sidebar shrink-0">
+
+        {/* ── Logo ── */}
+        <div
+          className="flex items-center gap-3 px-5 py-5"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          {/* Teal glow icon — matches auth page logo */}
+          <div className="ep-logo-icon" style={{ width: 36, height: 36, borderRadius: 9 }}>
+            <BookOpen style={{ width: 18, height: 18, color: '#0D0F1A' }} />
+          </div>
+          <span
+            style={{
+              fontFamily: '"Playfair Display", Georgia, serif',
+              fontSize: '18px',
+              fontWeight: 700,
+              color: '#F2F2F0',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            ExamPrep
+          </span>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 py-4 space-y-0.5 overflow-y-auto">
+        {/* ── Navigation ── */}
+        <nav className="flex-1 py-4 space-y-0.5 overflow-y-auto px-3">
           {NAV_ITEMS.map(({ icon: Icon, label, to }) => {
             const active = isActive(to)
             return (
@@ -47,50 +65,74 @@ export function Sidebar() {
                   <Link
                     to={to}
                     className={cn(
-                      // Base — left border reserves 3px so spacing stays consistent
-                      'flex items-center gap-3 border-l-[3px] pl-[9px] pr-3 py-2.5 rounded-r-md text-sm font-medium',
-                      // Hover scale
-                      'transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]',
+                      // Base layout — left border slot + padding
+                      'ds-nav-item flex items-center gap-3 border-l-[3px] pl-3 pr-3 py-2.5 rounded-r-lg text-sm font-medium',
                       active
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground',
+                        ? 'ds-nav-active border-primary'
+                        : 'border-transparent text-muted-foreground',
                     )}
                   >
-                    <Icon className="h-5 w-5 shrink-0" />
+                    <Icon className="h-4.5 w-4.5 shrink-0" style={{ width: 18, height: 18 }} />
                     {label}
                   </Link>
                 </TooltipTrigger>
-                {/* Tooltip is only meaningful in future collapsed (icon-only) mode */}
-                <TooltipContent side="right" sideOffset={12}>
-                  {label}
-                </TooltipContent>
+                <TooltipContent side="right" sideOffset={12}>{label}</TooltipContent>
               </Tooltip>
             )
           })}
         </nav>
 
-        {/* User */}
-        <div className="border-t p-3">
+        {/* ── User section ── */}
+        <div
+          className="p-3"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          {/* Profile link */}
           <Link
             to="/profile"
             className={cn(
-              'flex items-center gap-3 p-2 rounded-md transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]',
-              isActive('/profile') ? 'bg-accent' : 'hover:bg-accent'
+              'flex items-center gap-3 p-2.5 rounded-lg transition-all duration-150',
+              isActive('/profile')
+                ? 'bg-accent/50'
+                : 'hover:bg-white/5'
             )}
           >
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={(user as any)?.avatar} />
-              <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            <div className="relative">
+              <Avatar className="h-8 w-8" style={{ border: '2px solid rgba(0,229,204,0.3)' }}>
+                <AvatarImage src={(user as any)?.avatar} />
+                <AvatarFallback
+                  className="text-xs font-semibold"
+                  style={{ background: 'rgba(0,229,204,0.15)', color: '#00E5CC' }}
+                >
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              {/* Online indicator */}
+              <span
+                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full"
+                style={{ background: '#4ADE80', border: '2px solid #0D0F1A', boxShadow: '0 0 6px rgba(74,222,128,0.6)' }}
+              />
             </div>
-            <User className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate" style={{ color: '#F2F2F0' }}>{user?.name}</p>
+              <p className="text-xs truncate" style={{ color: '#8B8FA8' }}>{user?.email}</p>
+            </div>
+            <User className="h-4 w-4 shrink-0" style={{ color: '#8B8FA8' }} />
           </Link>
+
+          {/* Sign out */}
           <button
             onClick={logout}
-            className="flex items-center gap-3 px-2 py-1.5 w-full rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] mt-1"
+            className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm transition-all duration-150 mt-1 group"
+            style={{ color: '#8B8FA8' }}
+            onMouseEnter={e => {
+              ;(e.currentTarget as HTMLElement).style.color = '#F87171'
+              ;(e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.08)'
+            }}
+            onMouseLeave={e => {
+              ;(e.currentTarget as HTMLElement).style.color = '#8B8FA8'
+              ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+            }}
           >
             <LogOut className="h-4 w-4" />
             Sign Out

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
-import { StatsCard, statsCardVariants } from '@/components/dashboard/StatsCard'
+import { StatsCard } from '@/components/dashboard/StatsCard'
 import { StreakCard } from '@/components/dashboard/StreakCard'
 import { RecentActivity } from '@/components/dashboard/RecentActivity'
 import { ProgressHeatmap } from '@/components/dashboard/ProgressHeatmap'
@@ -14,7 +14,6 @@ import { EnrolledExamsSection } from '@/components/dashboard/EnrolledExamsSectio
 import { WelcomeBackBanner } from '@/components/dashboard/WelcomeBackBanner'
 import { AiTrendingWidget } from '@/components/ai/AiTrendingWidget'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
 import { BookOpen, Clock, Trophy, Target, Flame } from 'lucide-react'
 import type { DashboardStats } from '@/types'
 
@@ -62,34 +61,54 @@ function DashboardPage() {
       {/* ── Welcome back banner (first visit of the day) ── */}
       <WelcomeBackBanner streak={s?.streak} userName={user?.name} />
 
-      {/* ── Row 1: Header ── */}
+      {/* ── Row 1: Hero header ── */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">
-            {greeting()}, {user?.name?.split(' ')[0]}!
+          <h1
+            className="text-3xl font-bold"
+            style={{
+              fontFamily: '"Playfair Display", Georgia, serif',
+              color: '#F2F2F0',
+              letterSpacing: '-0.025em',
+              lineHeight: 1.2,
+            }}
+          >
+            {greeting()},{' '}
+            <span className="ep-gradient-text">{user?.name?.split(' ')[0]}</span>!
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-1 text-sm" style={{ color: '#8B8FA8' }}>
             {user?.targetExam
               ? `Preparing for ${user.targetExam.toUpperCase()}`
-              : "Let's get studying"}
+              : "Let's get studying today"}
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {examCountdown !== null && user?.targetExam && (
-            <Badge variant="outline" className="gap-1.5 text-sm py-1.5 px-3 border-primary/30">
-              <Target className="h-3.5 w-3.5 text-primary" />
+            <div
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold"
+              style={{
+                background: 'rgba(0,229,204,0.10)',
+                border: '1px solid rgba(0,229,204,0.25)',
+                color: '#00E5CC',
+              }}
+            >
+              <Target className="h-3.5 w-3.5" />
               {user.targetExam.toUpperCase()} in {examCountdown} days
-            </Badge>
+            </div>
           )}
           {s?.streak && (
-            <Badge
-              variant="secondary"
-              className="gap-1.5 text-sm py-1.5 px-3 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border-orange-200"
+            <div
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold"
+              style={{
+                background: 'rgba(255,140,66,0.12)',
+                border: '1px solid rgba(255,140,66,0.3)',
+                color: '#FF8C42',
+              }}
             >
-              <Flame className="h-3.5 w-3.5" />
+              <Flame className="h-3.5 w-3.5" style={{ filter: 'drop-shadow(0 0 4px rgba(255,140,66,0.6))' }} />
               {s.streak.currentStreak} day streak
-            </Badge>
+            </div>
           )}
         </div>
       </div>

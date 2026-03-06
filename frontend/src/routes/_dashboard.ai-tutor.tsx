@@ -13,12 +13,23 @@ function AiTutorPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">AI Assistant</h1>
-        <p className="text-muted-foreground">Chat, plan, and practice with AI</p>
+        <h1
+          className="text-2xl font-bold"
+          style={{
+            fontFamily: '"Playfair Display", Georgia, serif',
+            color: '#F2F2F0',
+            letterSpacing: '-0.025em',
+          }}
+        >
+          AI Assistant
+        </h1>
+        <p className="text-sm mt-1" style={{ color: '#8B8FA8' }}>
+          Chat, plan, and practice with AI
+        </p>
       </div>
 
       <Tabs defaultValue="chat">
-        <TabsList>
+        <TabsList style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <TabsTrigger value="chat">
             <Bot className="h-4 w-4 mr-2" />
             AI Tutor
