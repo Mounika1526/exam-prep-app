@@ -14,6 +14,9 @@ import { errorHandler } from './middleware/error.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
+// Trust Render/proxy's X-Forwarded-For header for accurate IP detection
+app.set('trust proxy', 1);
+
 // ─── Compression ──────────────────────────────────────────────────────────────
 app.use(compression());
 
