@@ -126,7 +126,7 @@ export function ContinueStudyingCard() {
           className="w-full ds-btn-shimmer ep-shimmer-btn"
           style={{ height: 40, fontWeight: 600 }}
         >
-          <Link to="/exams/$examId" params={{ examId: topic.examId }}>
+          <Link to="/study/$topicId" params={{ topicId: topic.topicId }}>
             Resume
             <ChevronRight className="h-4 w-4 ml-1" />
           </Link>

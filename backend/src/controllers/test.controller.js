@@ -107,7 +107,7 @@ export const getSession = async (req, res, next) => {
     if (!session) return sendError(res, 'Session not found', 404);
 
     if (session.status === 'COMPLETED') {
-      return sendError(res, 'Session already submitted — use GET /:sessionId/result', 400);
+      return sendSuccess(res, { sessionId: session.id, status: 'COMPLETED' });
     }
 
     // Questions without correct answers / explanations

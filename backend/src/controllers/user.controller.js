@@ -230,9 +230,9 @@ export const getEnrolledExams = async (req, res, next) => {
     const topicCounts = await prisma.$queryRaw`
       SELECT e.id AS "examId", COUNT(t.id)::int AS "totalTopics"
       FROM exams e
-      JOIN subjects s ON s.exam_id = e.id
-      JOIN chapters c ON c.subject_id = s.id
-      JOIN topics   t ON t.chapter_id = c.id
+      JOIN subjects s ON s."examId" = e.id
+      JOIN chapters c ON c."subjectId" = s.id
+      JOIN topics   t ON t."chapterId" = c.id
       WHERE e.id = ANY(${examIds})
       GROUP BY e.id
     `;

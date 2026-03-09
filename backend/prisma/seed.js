@@ -5,12 +5,21 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const pick  = arr => arr[Math.floor(Math.random() * arr.length)];
-const rand  = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); d.setHours(rand(7,22), rand(0,59), 0, 0); return d; };
+const pick    = arr => arr[Math.floor(Math.random() * arr.length)];
+const rand    = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
 
-// ─── Upsert helpers ───────────────────────────────────────────────────────────
+/** Returns a Date N days in the past at a random time */
+const daysAgo = n => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  d.setHours(rand(7, 22), rand(0, 59), rand(0, 59), 0);
+  return d;
+};
+
+/** Returns a Date between minDays and maxDays ago */
+const randPast = (minDays, maxDays) => daysAgo(rand(minDays, maxDays));
+
 const upsertSubject = (id, examId, title, icon, order) =>
   prisma.subject.upsert({ where: { id }, update: {}, create: { id, examId, title, icon, order } });
 
@@ -29,78 +38,83 @@ async function main() {
   const adminPw   = await bcrypt.hash('Admin@123',   10);
   const studentPw = await bcrypt.hash('Student@123', 10);
 
-  const admin = await prisma.user.upsert({
+  await prisma.user.upsert({
     where:  { email: 'admin@examprep.com' },
     update: {},
-    create: { name: 'Admin User', email: 'admin@examprep.com', password: adminPw, role: 'ADMIN' },
+    create: {
+      name: 'Admin User', email: 'admin@examprep.com',
+      password: adminPw, role: 'ADMIN',
+      createdAt: randPast(180, 365),
+    },
   });
 
-  // 50 students — diverse names, exams, study hours
+  // [name, email, targetExam, hoursPerDay, daysUntilExam, joinedDaysAgo, lastActiveDaysAgo]
   const studentDefs = [
-    ['Alice Chen',        'alice@example.com',       'exam-sde',  3, 120],
-    ['Bob Kumar',         'bob@example.com',         'exam-upsc', 5,  80],
-    ['Charlie Park',      'charlie@example.com',     'exam-gate', 4, 200],
-    ['Diana Sharma',      'diana@example.com',       'exam-sde',  2, 150],
-    ['Ethan Patel',       'ethan@example.com',       'exam-mern', 6,  60],
-    ['Fiona Nair',        'fiona@example.com',       'exam-gate', 3, 180],
-    ['George Thomas',     'george@example.com',      'exam-upsc', 4,  90],
-    ['Hannah Singh',      'hannah@example.com',      'exam-sde',  5, 100],
-    ['Ivan Reddy',        'ivan@example.com',        'exam-mern', 2, 240],
-    ['Jasmine Verma',     'jasmine@example.com',     'exam-gate', 4, 110],
-    ['Kevin Mehta',       'kevin@example.com',       'exam-sde',  3, 130],
-    ['Laura Joshi',       'laura@example.com',       'exam-upsc', 6,  70],
-    ['Manish Rao',        'manish@example.com',      'exam-gate', 4, 160],
-    ['Nina Kapoor',       'nina@example.com',        'exam-mern', 3, 200],
-    ['Oscar Iyer',        'oscar@example.com',       'exam-sde',  5,  85],
-    ['Priya Gupta',       'priya@example.com',       'exam-upsc', 4, 100],
-    ['Rahul Mishra',      'rahul@example.com',       'exam-gate', 3, 140],
-    ['Sneha Pillai',      'sneha@example.com',       'exam-sde',  2, 220],
-    ['Tarun Agarwal',     'tarun@example.com',       'exam-mern', 5,  75],
-    ['Uma Bose',          'uma@example.com',         'exam-upsc', 3, 190],
-    ['Vikram Sinha',      'vikram@example.com',      'exam-gate', 4, 115],
-    ['Wren Kulkarni',     'wren@example.com',        'exam-sde',  6,  55],
-    ['Xena Das',          'xena@example.com',        'exam-mern', 2, 260],
-    ['Yash Banerjee',     'yash@example.com',        'exam-upsc', 5,  95],
-    ['Zara Chatterjee',   'zara@example.com',        'exam-gate', 3, 175],
-    ['Arjun Tiwari',      'arjun@student.com',       'exam-sde',  4, 105],
-    ['Bhavna Saxena',     'bhavna@student.com',      'exam-mern', 3, 145],
-    ['Chirag Malhotra',   'chirag@student.com',      'exam-gate', 5,  88],
-    ['Deepika Anand',     'deepika@student.com',     'exam-upsc', 4, 125],
-    ['Farhan Sheikh',     'farhan@student.com',      'exam-sde',  2, 195],
-    ['Gayatri Menon',     'gayatri@student.com',     'exam-mern', 6,  65],
-    ['Harsh Trivedi',     'harsh@student.com',       'exam-gate', 3, 170],
-    ['Ishita Bhatia',     'ishita@student.com',      'exam-upsc', 4,  98],
-    ['Jayesh Pandey',     'jayesh@student.com',      'exam-sde',  5,  78],
-    ['Kavya Nambiar',     'kavya@student.com',       'exam-mern', 3, 210],
-    ['Lokesh Yadav',      'lokesh@student.com',      'exam-gate', 4, 135],
-    ['Meena Krishnan',    'meena@student.com',       'exam-upsc', 2, 185],
-    ['Nikhil Dutta',      'nikhil@student.com',      'exam-sde',  5,  92],
-    ['Oliva Fernando',    'oliva@student.com',       'exam-mern', 3, 165],
-    ['Prakash Hegde',     'prakash@student.com',     'exam-gate', 4, 118],
-    ['Qureshi Adnan',     'adnan@student.com',       'exam-upsc', 6,  72],
-    ['Rekha Subramaniam', 'rekha@student.com',       'exam-sde',  3, 155],
-    ['Sanjay Ghosh',      'sanjay@student.com',      'exam-mern', 4, 102],
-    ['Tanvi Oberoi',      'tanvi@student.com',       'exam-gate', 5,  82],
-    ['Uday Puri',         'uday@student.com',        'exam-upsc', 2, 230],
-    ['Vanessa D\'Souza',  'vanessa@student.com',     'exam-sde',  4, 112],
-    ['Wasim Khan',        'wasim@student.com',       'exam-mern', 3, 148],
-    ['Ximena Jose',       'ximena@student.com',      'exam-gate', 5,  88],
-    ['Yogesh Pawar',      'yogesh@student.com',      'exam-upsc', 4, 122],
-    ['Zubin Mistry',      'zubin@student.com',       'exam-sde',  3, 158],
+    ['Alice Chen',        'alice@example.com',       'exam-sde',      3, 120,  10,  0],
+    ['Bob Kumar',         'bob@example.com',         'exam-backend',  5,  80, 180,  1],
+    ['Charlie Park',      'charlie@example.com',     'exam-devops',   4, 200,  45,  0],
+    ['Diana Sharma',      'diana@example.com',       'exam-sde',      2, 150,  90,  2],
+    ['Ethan Brown',       'ethan@example.com',       'exam-frontend', 4, 100,  30,  1],
+    ['Fiona Nair',        'fiona@example.com',       'exam-devops',   3, 180, 120,  3],
+    ['George Thomas',     'george@example.com',      'exam-backend',  4,  90, 160,  0],
+    ['Hannah Singh',      'hannah@example.com',      'exam-sde',      5, 100,  20,  1],
+    ['Ivan Petrov',       'ivan@example.com',        'exam-ui',       3, 160,  75,  2],
+    ['Jasmine Verma',     'jasmine@example.com',     'exam-frontend', 4, 110,  50,  0],
+    ['Kevin Mehta',       'kevin@example.com',       'exam-sde',      3, 130, 200,  4],
+    ['Laura Joshi',       'laura@example.com',       'exam-ui',       6,  70, 140,  1],
+    ['Manish Rao',        'manish@example.com',      'exam-devops',   4, 160,  60,  3],
+    ['Nina Patel',        'nina@example.com',        'exam-frontend', 3, 140,  35,  0],
+    ['Oscar Iyer',        'oscar@example.com',       'exam-sde',      5,  85, 110,  2],
+    ['Priya Gupta',       'priya@example.com',       'exam-backend',  4, 100,  25,  1],
+    ['Rahul Mishra',      'rahul@example.com',       'exam-devops',   3, 140, 170,  0],
+    ['Sneha Pillai',      'sneha@example.com',       'exam-sde',      2, 220,  80,  5],
+    ['Tanvir Ahmed',      'tanvir@example.com',      'exam-frontend', 4, 115,  40,  1],
+    ['Uma Bose',          'uma@example.com',         'exam-ui',       3, 190, 130,  2],
+    ['Vikram Sinha',      'vikram@example.com',      'exam-backend',  4, 115,  95,  0],
+    ['Wren Kulkarni',     'wren@example.com',        'exam-sde',      6,  55, 210,  6],
+    ['Xuan Li',           'xuan@example.com',        'exam-frontend', 4, 120,  15,  0],
+    ['Yash Banerjee',     'yash@example.com',        'exam-devops',   5,  95, 155,  3],
+    ['Zara Chatterjee',   'zara@example.com',        'exam-ui',       3, 175,  65,  1],
+    ['Arjun Tiwari',      'arjun@student.com',       'exam-sde',      4, 105,  55,  0],
+    ['Bharat Kapoor',     'bharat@student.com',      'exam-backend',  3, 145, 100,  2],
+    ['Chirag Malhotra',   'chirag@student.com',      'exam-devops',   5,  88, 190,  4],
+    ['Deepika Anand',     'deepika@student.com',     'exam-frontend', 4, 125,  70,  1],
+    ['Farhan Sheikh',     'farhan@student.com',      'exam-sde',      2, 195,  85,  0],
+    ['Gauri Mehta',       'gauri@student.com',       'exam-ui',       4, 108,  42,  2],
+    ['Harsh Trivedi',     'harsh@student.com',       'exam-devops',   3, 170, 175,  5],
+    ['Ishita Bhatia',     'ishita@student.com',      'exam-frontend', 4,  98,  28,  1],
+    ['Jayesh Pandey',     'jayesh@student.com',      'exam-sde',      5,  78, 115,  0],
+    ['Kavya Nambiar',     'kavya@student.com',       'exam-ui',       4, 130,  52,  3],
+    ['Lokesh Yadav',      'lokesh@student.com',      'exam-backend',  4, 135, 145,  1],
+    ['Meena Krishnan',    'meena@student.com',       'exam-frontend', 2, 185,  88,  2],
+    ['Nikhil Dutta',      'nikhil@student.com',      'exam-sde',      5,  92,  33,  0],
+    ['Omkar Desai',       'omkar@student.com',       'exam-devops',   4, 122, 105,  4],
+    ['Prakash Hegde',     'prakash@student.com',     'exam-backend',  4, 118,  48,  1],
+    ['Qureshi Adnan',     'adnan@student.com',       'exam-ui',       6,  72, 220,  7],
+    ['Rekha Subramaniam', 'rekha@student.com',       'exam-sde',      3, 155,  62,  2],
+    ['Suresh Nair',       'suresh@student.com',      'exam-frontend', 4, 142, 135,  0],
+    ['Tanvi Oberoi',      'tanvi@student.com',       'exam-devops',   5,  82,  22,  1],
+    ['Uday Puri',         'uday@student.com',        'exam-backend',  2, 230, 195,  8],
+    ['Vanessa D\'Souza',  'vanessa@student.com',     'exam-sde',      4, 112,  38,  0],
+    ['Wasim Khan',        'wasim@student.com',       'exam-ui',       5,  90, 165,  3],
+    ['Ximena Jose',       'ximena@student.com',      'exam-frontend', 5,  88,  18,  1],
+    ['Yogesh Pawar',      'yogesh@student.com',      'exam-devops',   4, 122,  92,  2],
+    ['Zubin Mistry',      'zubin@student.com',       'exam-sde',      3, 158, 125,  0],
   ];
 
   const students = [];
-  for (const [name, email, targetExam, hoursPerDay, daysUntilExam] of studentDefs) {
-    const examDate = new Date();
+  for (const [name, email, targetExam, hoursPerDay, daysUntilExam, joinedDaysAgo, lastActiveDaysAgo] of studentDefs) {
+    const examDate  = new Date();
     examDate.setDate(examDate.getDate() + daysUntilExam);
-    const student = await prisma.user.upsert({
+    const createdAt = daysAgo(joinedDaysAgo);
+
+    const s = await prisma.user.upsert({
       where:  { email },
-      update: {},
-      create: { name, email, password: studentPw, role: 'STUDENT', targetExam, hoursPerDay, examDate },
+      update: { targetExam, hoursPerDay, examDate },
+      create: { name, email, password: studentPw, role: 'STUDENT', targetExam, hoursPerDay, examDate, createdAt },
     });
-    students.push(student);
+    students.push({ ...s, lastActiveDaysAgo });
   }
-  console.log(`  ✓ ${students.length + 1} users`);
 
   // ══════════════════════════════════════════════════════════════════════════
   //  EXAMS
@@ -108,937 +122,482 @@ async function main() {
   const sdeExam = await prisma.exam.upsert({
     where:  { id: 'exam-sde' }, update: {},
     create: { id: 'exam-sde', title: 'SDE Interview Prep',
-      description: 'Software Development Engineer interviews at top tech companies (FAANG & beyond)',
-      category: 'Tech Interview', isActive: true },
-  });
-  const upscExam = await prisma.exam.upsert({
-    where:  { id: 'exam-upsc' }, update: {},
-    create: { id: 'exam-upsc', title: 'UPSC Civil Services',
-      description: 'Union Public Service Commission – IAS/IPS/IFS Prelims & Mains',
-      category: 'Government', isActive: true },
-  });
-  const gateExam = await prisma.exam.upsert({
-    where:  { id: 'exam-gate' }, update: {},
-    create: { id: 'exam-gate', title: 'GATE Computer Science',
-      description: 'Graduate Aptitude Test in Engineering – CS & IT paper',
+      description: 'Comprehensive prep for Software Development Engineer interviews at top tech companies.',
       category: 'Engineering', isActive: true },
   });
-  const mernExam = await prisma.exam.upsert({
-    where:  { id: 'exam-mern' }, update: {},
-    create: { id: 'exam-mern', title: 'MERN Stack Developer',
-      description: 'Full-stack web development with MongoDB, Express, React and Node.js',
-      category: 'Web Development', isActive: true },
+
+  const frontendExam = await prisma.exam.upsert({
+    where:  { id: 'exam-frontend' }, update: {},
+    create: { id: 'exam-frontend', title: 'Frontend Developer',
+      description: 'Master HTML, CSS, JavaScript, React, and modern frontend architecture for interviews.',
+      category: 'Engineering', isActive: true },
   });
-  const exams = [sdeExam, upscExam, gateExam, mernExam];
-  console.log(`  ✓ ${exams.length} exams`);
+
+  const backendExam = await prisma.exam.upsert({
+    where:  { id: 'exam-backend' }, update: {},
+    create: { id: 'exam-backend', title: 'Backend Developer',
+      description: 'Cover REST APIs, databases, system design, Node.js, and cloud fundamentals.',
+      category: 'Engineering', isActive: true },
+  });
+
+  const uiExam = await prisma.exam.upsert({
+    where:  { id: 'exam-ui' }, update: {},
+    create: { id: 'exam-ui', title: 'UI/UX Designer',
+      description: 'Design principles, user research, Figma, accessibility, and product thinking.',
+      category: 'Design', isActive: true },
+  });
+
+  const devopsExam = await prisma.exam.upsert({
+    where:  { id: 'exam-devops' }, update: {},
+    create: { id: 'exam-devops', title: 'DevOps Engineer',
+      description: 'CI/CD, Docker, Kubernetes, cloud platforms, IaC, and SRE fundamentals.',
+      category: 'Engineering', isActive: true },
+  });
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  SDE INTERVIEW PREP  — Subjects / Chapters / Topics
+  //  SDE — Subjects / Chapters / Topics
   // ══════════════════════════════════════════════════════════════════════════
-  const sdeDsa = await upsertSubject('subj-sde-dsa',  sdeExam.id, 'Data Structures & Algorithms', '🧮', 1);
-  const sdeSd  = await upsertSubject('subj-sde-sd',   sdeExam.id, 'System Design',                '🏗️', 2);
-  const sdeBeh = await upsertSubject('subj-sde-beh',  sdeExam.id, 'Behavioral & HR',              '🤝', 3);
+  const sdeDsa = await upsertSubject('sde-dsa', 'exam-sde', 'Data Structures & Algorithms', '📊', 1);
+  const sdeSd  = await upsertSubject('sde-sd',  'exam-sde', 'System Design',                '🏗️', 2);
+  const sdeBeh = await upsertSubject('sde-beh', 'exam-sde', 'Behavioral & HR',               '🤝', 3);
 
-  // DSA → Arrays & Strings
-  const chArrays = await upsertChapter('ch-sde-arrays', sdeDsa.id, 'Arrays & Strings', 1, 'Sliding window, two pointers, prefix sums');
-  const tTwoPtr  = await upsertTopic('t-sde-twoptr', chArrays.id, 'Two Pointers Technique', `## Two Pointers Technique
+  await upsertChapter('sde-ch1', 'sde-dsa', 'Arrays & Strings',    1, 'Fundamental array and string problems');
+  await upsertChapter('sde-ch2', 'sde-dsa', 'Trees & Graphs',      2, 'Binary trees, BSTs, and graph traversal');
+  await upsertChapter('sde-ch3', 'sde-dsa', 'Dynamic Programming', 3, 'Memoization and tabulation');
+  await upsertChapter('sde-ch4', 'sde-sd',  'Scalability Basics',  1, 'Load balancers, caching, CDN');
+  await upsertChapter('sde-ch5', 'sde-sd',  'Databases at Scale',  2, 'Sharding, replication, CAP theorem');
+  await upsertChapter('sde-ch6', 'sde-beh', 'STAR Method',         1, 'Structuring behavioral answers');
+  await upsertChapter('sde-ch7', 'sde-beh', 'Leadership & Conflict',2,'Handling disagreements and leading teams');
 
-A pattern using two indices to traverse a sorted array, reducing O(n²) to O(n).
-
-### When to Use
-- Sorted array + pair/triplet with target sum
-- Valid palindrome checking
-- Removing duplicates in-place
-
-### Template
-\`\`\`javascript
-let l = 0, r = arr.length - 1;
-while (l < r) {
-  const sum = arr[l] + arr[r];
-  if (sum === target) return [l, r];
-  else if (sum < target) l++;
-  else r--;
-}
-\`\`\``, 1, 60);
-
-  const tSliding = await upsertTopic('t-sde-sliding', chArrays.id, 'Sliding Window', `## Sliding Window
-
-Maintains a variable or fixed-size window to avoid redundant computation.
-
-### Fixed Window
-\`\`\`javascript
-let sum = arr.slice(0, k).reduce((a, b) => a + b, 0), max = sum;
-for (let i = k; i < arr.length; i++) { sum += arr[i] - arr[i-k]; max = Math.max(max, sum); }
-\`\`\`
-
-### Variable Window
-Expand right pointer, shrink left when constraint violated.
-
-Key problems: Longest Substring Without Repeating Chars, Minimum Window Substring.`, 2, 50);
-
-  const tPrefixSum = await upsertTopic('t-sde-prefix', chArrays.id, 'Prefix Sum', `## Prefix Sum
-
-Pre-compute cumulative sums for O(1) range queries.
-
-\`\`\`javascript
-const prefix = [0];
-for (const x of arr) prefix.push(prefix[prefix.length-1] + x);
-// range sum [l, r] = prefix[r+1] - prefix[l]
-\`\`\``, 3, 40);
-
-  // DSA → Trees & Graphs
-  const chTrees  = await upsertChapter('ch-sde-trees', sdeDsa.id, 'Trees & Graphs', 2, 'BST, DFS, BFS, shortest paths');
-  const tBst     = await upsertTopic('t-sde-bst', chTrees.id, 'Binary Search Tree', `## Binary Search Tree
-
-### Properties
-- Left subtree values < node, right subtree values > node
-- In-order traversal → sorted sequence
-
-### Complexity
-| Operation | Avg | Worst |
-|-----------|-----|-------|
-| Search | O(log n) | O(n) |
-| Insert | O(log n) | O(n) |
-| Delete | O(log n) | O(n) |`, 1, 60);
-
-  const tDfsBfs  = await upsertTopic('t-sde-dfsbfs', chTrees.id, 'DFS & BFS', `## Graph Traversal
-
-### DFS — uses stack/recursion
-Applications: cycle detection, topological sort, connected components
-
-### BFS — uses queue
-Applications: shortest path (unweighted), level-order traversal
-
-Both: O(V + E) time, O(V) space`, 2, 55);
-
-  // DSA → Dynamic Programming
-  const chDp     = await upsertChapter('ch-sde-dp', sdeDsa.id, 'Dynamic Programming', 3, 'Memoization, tabulation, classic patterns');
-  const tDpIntro = await upsertTopic('t-sde-dpintro', chDp.id, 'DP Foundations', `## Dynamic Programming
-
-Break into overlapping subproblems; cache results to avoid recomputation.
-
-### Top-down (Memoization)
-\`\`\`javascript
-const memo = {};
-function fib(n) {
-  if (n <= 1) return n;
-  return memo[n] ?? (memo[n] = fib(n-1) + fib(n-2));
-}
-\`\`\`
-
-### Bottom-up (Tabulation)
-\`\`\`javascript
-const dp = [0, 1];
-for (let i = 2; i <= n; i++) dp[i] = dp[i-1] + dp[i-2];
-\`\`\``, 1, 70);
-
-  const tKnapsack = await upsertTopic('t-sde-knapsack', chDp.id, 'Knapsack Problem', `## 0/1 Knapsack
-
-Given items with weights and values, maximize value within weight capacity W.
-
-\`\`\`javascript
-// dp[i][w] = max value using first i items with capacity w
-for (let i = 1; i <= n; i++)
-  for (let w = 0; w <= W; w++)
-    dp[i][w] = wt[i] > w ? dp[i-1][w] : Math.max(dp[i-1][w], dp[i-1][w-wt[i]] + val[i]);
-\`\`\``, 2, 65);
-
-  // System Design
-  const chScaling = await upsertChapter('ch-sde-scaling', sdeSd.id, 'Scalability Fundamentals', 1, 'Load balancing, caching, databases');
-  const tLb       = await upsertTopic('t-sde-lb', chScaling.id, 'Load Balancing', `## Load Balancing
-
-Distribute traffic across multiple servers to improve availability and throughput.
-
-### Algorithms
-- **Round Robin** — requests rotate across servers
-- **Least Connections** — routes to server with fewest active connections
-- **IP Hash** — same client always hits same server (session affinity)
-- **Weighted** — more powerful servers get more traffic
-
-### Types
-- Layer 4 (Transport): TCP/UDP
-- Layer 7 (Application): HTTP, can inspect headers/cookies`, 1, 50);
-
-  const tCaching  = await upsertTopic('t-sde-cache', chScaling.id, 'Caching Strategies', `## Caching
-
-### Cache-Aside (Lazy Loading)
-App checks cache → on miss, loads from DB and populates cache.
-
-### Write-Through
-Write to cache AND DB simultaneously. Strong consistency, higher write latency.
-
-### Write-Behind
-Write to cache immediately, flush to DB asynchronously. Fast writes, risk of data loss.
-
-### Eviction Policies
-LRU · LFU · FIFO · Random`, 2, 45);
+  const sdeTopics = await Promise.all([
+    upsertTopic('sde-t1',  'sde-ch1', 'Two Pointers Technique',  'Use two pointers moving toward each other or in same direction.', 1, 40),
+    upsertTopic('sde-t2',  'sde-ch1', 'Sliding Window',           'Fixed and variable-size window patterns.',                       2, 45),
+    upsertTopic('sde-t3',  'sde-ch1', 'Prefix Sums',             'Cumulative sums for range queries.',                             3, 35),
+    upsertTopic('sde-t4',  'sde-ch2', 'Binary Search Trees',     'Insertion, deletion, and traversal in BSTs.',                   1, 50),
+    upsertTopic('sde-t5',  'sde-ch2', 'BFS & DFS',               'Breadth-first and depth-first graph traversals.',               2, 55),
+    upsertTopic('sde-t6',  'sde-ch3', 'Fibonacci & Memoization', 'Top-down DP with caching.',                                     1, 40),
+    upsertTopic('sde-t7',  'sde-ch3', 'Knapsack Problems',       '0/1 knapsack and variations.',                                  2, 60),
+    upsertTopic('sde-t8',  'sde-ch4', 'Load Balancing',          'Round-robin, consistent hashing, and health checks.',           1, 50),
+    upsertTopic('sde-t9',  'sde-ch5', 'Database Sharding',       'Horizontal partitioning strategies.',                           1, 55),
+    upsertTopic('sde-t10', 'sde-ch6', 'Tell Me About Yourself',  'Crafting a 90-second professional intro.',                      1, 30),
+    upsertTopic('sde-t11', 'sde-ch7', 'Handling Disagreements',  'Using STAR to frame conflict resolution stories.',               1, 35),
+  ]);
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  GATE CS — Subjects / Chapters / Topics
+  //  FRONTEND — Subjects / Chapters / Topics
   // ══════════════════════════════════════════════════════════════════════════
-  const gateOs   = await upsertSubject('subj-gate-os',   gateExam.id, 'Operating Systems',         '⚙️', 1);
-  const gateDm   = await upsertSubject('subj-gate-dm',   gateExam.id, 'Discrete Mathematics',      '📐', 2);
-  const gateCn   = await upsertSubject('subj-gate-cn',   gateExam.id, 'Computer Networks',         '🌐', 3);
-  const gateDbms = await upsertSubject('subj-gate-dbms', gateExam.id, 'Database Management',       '🗄️', 4);
+  const feCore  = await upsertSubject('fe-core',  'exam-frontend', 'Core Web Technologies', '🌐', 1);
+  const feReact = await upsertSubject('fe-react', 'exam-frontend', 'React & Modern JS',     '⚛️', 2);
+  const fePer   = await upsertSubject('fe-perf',  'exam-frontend', 'Performance & Testing', '🚀', 3);
 
-  const chProcess = await upsertChapter('ch-gate-process', gateOs.id, 'Processes & Threads', 1, 'Scheduling, synchronization, deadlocks');
-  const tScheduling = await upsertTopic('t-gate-sched', chProcess.id, 'CPU Scheduling', `## CPU Scheduling
+  await upsertChapter('fe-ch1', 'fe-core',  'HTML & Accessibility', 1, 'Semantic HTML, ARIA, WCAG');
+  await upsertChapter('fe-ch2', 'fe-core',  'CSS Fundamentals',     2, 'Box model, flexbox, grid');
+  await upsertChapter('fe-ch3', 'fe-react', 'React Hooks',          1, 'useState, useEffect, custom hooks');
+  await upsertChapter('fe-ch4', 'fe-react', 'State Management',     2, 'Context, Redux, Zustand');
+  await upsertChapter('fe-ch5', 'fe-perf',  'Web Performance',      1, 'LCP, FID, CLS, lazy loading');
+  await upsertChapter('fe-ch6', 'fe-perf',  'Testing Strategies',   2, 'Unit, integration, E2E tests');
 
-### Algorithms
-| Algorithm | Preemptive | Starvation |
-|-----------|-----------|------------|
-| FCFS | No | No |
-| SJF | No | Yes |
-| SRTF | Yes | Yes |
-| Round Robin | Yes | No |
-| Priority | Both | Yes |
-
-### Key Metrics
-- **Turnaround Time** = Completion − Arrival
-- **Waiting Time** = Turnaround − Burst
-- **Response Time** = First CPU − Arrival`, 1, 60);
-
-  const tDeadlock = await upsertTopic('t-gate-deadlock', chProcess.id, 'Deadlocks', `## Deadlocks
-
-### Four Necessary Conditions (Coffman)
-1. Mutual Exclusion
-2. Hold and Wait
-3. No Preemption
-4. Circular Wait
-
-### Banker's Algorithm
-Safe-state detection: check if remaining resources can satisfy at least one process → release → repeat.
-
-### Prevention vs Avoidance vs Detection
-- Prevention: negate one Coffman condition
-- Avoidance: Banker's algorithm
-- Detection + Recovery: allow deadlocks, then recover`, 2, 55);
-
-  const chGraph  = await upsertChapter('ch-gate-graph',  gateDm.id,  'Graph Theory',    1, 'Trees, spanning trees, paths');
-  const tGraphDm = await upsertTopic('t-gate-graphdm', chGraph.id, 'Graph Theory Basics', `## Graph Theory
-
-### Types
-- **Undirected**: edges have no direction
-- **Directed (Digraph)**: edges have direction
-- **Weighted**: edges carry a value
-- **DAG**: directed acyclic graph
-
-### Key Terms
-- **Degree**: number of edges at a vertex
-- **Path**: sequence of vertices connected by edges
-- **Cycle**: path that starts and ends at same vertex
-- **Connected Component**: maximal connected subgraph
-
-### Trees
-A connected undirected graph with n vertices and n−1 edges (no cycles).`, 1, 50);
-
-  const chSql    = await upsertChapter('ch-gate-sql',   gateDbms.id, 'SQL & Relational Model', 1, 'Queries, joins, normalization');
-  const tNorm    = await upsertTopic('t-gate-norm', chSql.id, 'Normalization', `## Database Normalization
-
-### Normal Forms
-| NF | Requirement |
-|----|------------|
-| 1NF | Atomic values, no repeating groups |
-| 2NF | 1NF + no partial dependencies |
-| 3NF | 2NF + no transitive dependencies |
-| BCNF | Every determinant is a candidate key |
-
-### Functional Dependencies
-X → Y means knowing X determines Y uniquely.
-
-### Decomposition
-Lossless-join + Dependency-preserving decomposition is ideal.`, 1, 65);
-
-  const chNetLayer = await upsertChapter('ch-gate-netlayer', gateCn.id, 'Network Layers', 1, 'OSI model, TCP/IP, protocols');
-  const tOsi       = await upsertTopic('t-gate-osi', chNetLayer.id, 'OSI Model', `## OSI Reference Model
-
-| Layer | Name | Protocol Examples |
-|-------|------|------------------|
-| 7 | Application | HTTP, FTP, SMTP |
-| 6 | Presentation | SSL, JPEG |
-| 5 | Session | RPC, NetBIOS |
-| 4 | Transport | TCP, UDP |
-| 3 | Network | IP, ICMP |
-| 2 | Data Link | Ethernet, Wi-Fi |
-| 1 | Physical | Cables, Signals |
-
-Mnemonic: **A**ll **P**eople **S**eem **T**o **N**eed **D**ata **P**rocessing`, 1, 45);
+  const feTopics = await Promise.all([
+    upsertTopic('fe-t1',  'fe-ch1', 'Semantic HTML5',        'Elements and their meaning: article, section, aside, nav.',    1, 35),
+    upsertTopic('fe-t2',  'fe-ch1', 'WCAG Accessibility',    'ARIA roles, keyboard navigation, and contrast ratios.',        2, 45),
+    upsertTopic('fe-t3',  'fe-ch2', 'Flexbox Layout',        'Main axis, cross axis, flex-grow/shrink/basis.',               1, 40),
+    upsertTopic('fe-t4',  'fe-ch2', 'CSS Grid',              'fr units, grid-template-areas, auto-placement.',               2, 45),
+    upsertTopic('fe-t5',  'fe-ch3', 'useState & useEffect',  'State updates, deps array, cleanup functions.',                1, 50),
+    upsertTopic('fe-t6',  'fe-ch3', 'Custom Hooks',          'Extracting reusable logic into custom hooks.',                 2, 45),
+    upsertTopic('fe-t7',  'fe-ch4', 'Context API',           'createContext, Provider, useContext patterns.',                1, 40),
+    upsertTopic('fe-t8',  'fe-ch5', 'Core Web Vitals',       'LCP < 2.5s, FID < 100ms, CLS < 0.1 targets.',                1, 40),
+    upsertTopic('fe-t9',  'fe-ch6', 'React Testing Library', 'render, fireEvent, getByRole, async queries.',                1, 50),
+    upsertTopic('fe-t10', 'fe-ch6', 'Cypress E2E',           'cy.visit, cy.get, cy.intercept, best practices.',              2, 55),
+  ]);
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  UPSC — Subjects / Chapters / Topics
+  //  BACKEND — Subjects / Chapters / Topics
   // ══════════════════════════════════════════════════════════════════════════
-  const upscGs1  = await upsertSubject('subj-upsc-gs1',  upscExam.id, 'General Studies I',  '🏛️', 1);
-  const upscGs2  = await upsertSubject('subj-upsc-gs2',  upscExam.id, 'General Studies II', '⚖️', 2);
-  const upscCsat = await upsertSubject('subj-upsc-csat', upscExam.id, 'CSAT',               '📊', 3);
+  const beApi = await upsertSubject('be-api', 'exam-backend', 'API Design',     '🔌', 1);
+  const beDb  = await upsertSubject('be-db',  'exam-backend', 'Databases',       '🗄️', 2);
+  const beSec = await upsertSubject('be-sec', 'exam-backend', 'Security & Auth', '🔐', 3);
 
-  const chHistory = await upsertChapter('ch-upsc-hist', upscGs1.id, 'Indian History', 1, 'Ancient, medieval and modern India');
-  const tAncient  = await upsertTopic('t-upsc-ancient', chHistory.id, 'Ancient India', `## Ancient India
+  await upsertChapter('be-ch1', 'be-api', 'REST Principles',        1, 'HTTP methods, status codes, HATEOAS');
+  await upsertChapter('be-ch2', 'be-api', 'GraphQL Fundamentals',   2, 'Schema, resolvers, queries, mutations');
+  await upsertChapter('be-ch3', 'be-db',  'SQL & Indexing',         1, 'Joins, indexes, query optimization');
+  await upsertChapter('be-ch4', 'be-db',  'NoSQL Databases',        2, 'MongoDB, Redis, use-case selection');
+  await upsertChapter('be-ch5', 'be-sec', 'Authentication',         1, 'JWT, OAuth2, sessions');
+  await upsertChapter('be-ch6', 'be-sec', 'Common Vulnerabilities', 2, 'OWASP Top 10, input validation');
 
-### Indus Valley Civilisation (3300–1300 BCE)
-- Urban planning: Mohenjo-daro, Harappa
-- Great Bath, granaries, drainage systems
-- Undeciphered Indus script
-
-### Vedic Period
-- Rig Veda (earliest), Sama, Yajur, Atharva
-- Later Vedic: iron tools, kingdoms (Mahajanapadas)
-
-### Mauryan Empire (322–185 BCE)
-- Chandragupta Maurya → Bindusara → Ashoka
-- Arthashastra (Kautilya)
-- Ashoka's Dhamma, rock edicts`, 1, 75);
-
-  const chPolity  = await upsertChapter('ch-upsc-polity', upscGs2.id, 'Indian Polity', 1, 'Constitution, Parliament, judiciary');
-  const tConst    = await upsertTopic('t-upsc-const', chPolity.id, 'Indian Constitution', `## Indian Constitution
-
-### Key Features
-- Longest written constitution in the world
-- Federal with unitary bias
-- Parliamentary form of government
-- Independent judiciary
-
-### Parts and Articles
-- Part III (Articles 12–35): Fundamental Rights
-- Part IV (Articles 36–51): Directive Principles
-- Part IVA (Article 51A): Fundamental Duties
-
-### Amendments
-- 42nd Amendment (1976): Mini-Constitution
-- 44th Amendment (1978): Restored right to property to legal right
-- 73rd/74th: Panchayati Raj and Urban Local Bodies`, 1, 80);
-
-  const chCsatMath = await upsertChapter('ch-upsc-csatmath', upscCsat.id, 'Quantitative Aptitude', 1, 'Number system, percentages, profit-loss');
-  const tRatio     = await upsertTopic('t-upsc-ratio', chCsatMath.id, 'Ratio & Proportion', `## Ratio & Proportion
-
-### Ratio
-a:b = a/b. If a:b = 3:4 and total = 70, then a = 30, b = 40.
-
-### Proportion
-a:b :: c:d ⟹ ad = bc (product of means = product of extremes)
-
-### Compound Ratio
-(a:b) × (c:d) = ac:bd
-
-### Key Formulae
-- **Partnership**: Profit shared in ratio of capital × time
-- **Mixture**: Alligation rule for weighted averages`, 1, 55);
+  const beTopics = await Promise.all([
+    upsertTopic('be-t1',  'be-ch1', 'HTTP Methods & Status Codes', 'GET, POST, PUT, PATCH, DELETE and when to use each.',  1, 40),
+    upsertTopic('be-t2',  'be-ch1', 'RESTful Resource Design',     'Naming conventions, versioning, pagination.',           2, 45),
+    upsertTopic('be-t3',  'be-ch2', 'GraphQL vs REST',             'When to use GraphQL, N+1 problem, DataLoader.',         1, 50),
+    upsertTopic('be-t4',  'be-ch3', 'SQL Joins & Subqueries',      'INNER, LEFT, RIGHT joins; correlated subqueries.',      1, 55),
+    upsertTopic('be-t5',  'be-ch3', 'Database Indexing',           'B-tree, composite indexes, covering indexes.',          2, 50),
+    upsertTopic('be-t6',  'be-ch4', 'MongoDB Schema Design',       'Embedding vs referencing, aggregation pipelines.',      1, 45),
+    upsertTopic('be-t7',  'be-ch4', 'Redis Caching Patterns',      'Cache-aside, write-through, TTL strategies.',           2, 40),
+    upsertTopic('be-t8',  'be-ch5', 'JWT Authentication',          'Access tokens, refresh tokens, blacklisting.',          1, 50),
+    upsertTopic('be-t9',  'be-ch5', 'OAuth2 & OpenID Connect',     'Authorization code flow, PKCE, scopes.',                2, 55),
+    upsertTopic('be-t10', 'be-ch6', 'OWASP Top 10',               'Injection, XSS, CSRF, broken auth, and fixes.',          1, 60),
+  ]);
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  MERN STACK — Subjects / Chapters / Topics
+  //  UI/UX — Subjects / Chapters / Topics
   // ══════════════════════════════════════════════════════════════════════════
-  const mernReact  = await upsertSubject('subj-mern-react',  mernExam.id, 'React.js',   '⚛️', 1);
-  const mernNode   = await upsertSubject('subj-mern-node',   mernExam.id, 'Node.js',    '🟢', 2);
-  const mernMongo  = await upsertSubject('subj-mern-mongo',  mernExam.id, 'MongoDB',    '🍃', 3);
-  const mernExpress = await upsertSubject('subj-mern-express', mernExam.id, 'Express.js', '🚂', 4);
+  const uiPrinc    = await upsertSubject('ui-princ',    'exam-ui', 'Design Principles',   '🎨', 1);
+  const uiResearch = await upsertSubject('ui-research', 'exam-ui', 'User Research',        '🔍', 2);
+  const uiTools    = await upsertSubject('ui-tools',    'exam-ui', 'Tools & Prototyping',  '🛠️', 3);
 
-  const chHooks   = await upsertChapter('ch-mern-hooks',  mernReact.id,   'React Hooks',      1, 'useState, useEffect, custom hooks');
-  const tUseState = await upsertTopic('t-mern-usestate', chHooks.id, 'useState & useReducer', `## State Management Hooks
+  await upsertChapter('ui-ch1', 'ui-princ',    'Visual Design',          1, 'Typography, colour, hierarchy');
+  await upsertChapter('ui-ch2', 'ui-princ',    'Interaction Design',     2, 'Affordances, feedback, mapping');
+  await upsertChapter('ui-ch3', 'ui-research', 'Research Methods',       1, 'Interviews, surveys, usability tests');
+  await upsertChapter('ui-ch4', 'ui-research', 'Personas & Journey Maps',2, 'Synthesising research into artefacts');
+  await upsertChapter('ui-ch5', 'ui-tools',    'Figma',                  1, 'Components, auto layout, variants');
+  await upsertChapter('ui-ch6', 'ui-tools',    'Design Systems',         2, 'Tokens, component libraries');
 
-### useState
-\`\`\`jsx
-const [count, setCount] = useState(0);
-setCount(prev => prev + 1); // functional update
-\`\`\`
+  const uiTopics = await Promise.all([
+    upsertTopic('ui-t1',  'ui-ch1', 'Typography Fundamentals', 'Type scale, leading, tracking, pairing fonts.',        1, 40),
+    upsertTopic('ui-t2',  'ui-ch1', 'Colour Theory & Contrast','Hue, saturation, WCAG AA/AAA contrast ratios.',        2, 40),
+    upsertTopic('ui-t3',  'ui-ch2', 'Gestalt Principles',      'Proximity, similarity, closure, and figure-ground.',   1, 45),
+    upsertTopic('ui-t4',  'ui-ch2', 'Microinteractions',       'Triggers, rules, feedback, loops and modes.',          2, 35),
+    upsertTopic('ui-t5',  'ui-ch3', 'Usability Testing',       'Moderated vs unmoderated, think-aloud protocol.',      1, 50),
+    upsertTopic('ui-t6',  'ui-ch3', 'UX Surveys & Analytics',  'SUS, NPS, heat maps, funnel analysis.',                2, 45),
+    upsertTopic('ui-t7',  'ui-ch4', 'User Personas',           'Goal-directed vs proto-personas.',                     1, 40),
+    upsertTopic('ui-t8',  'ui-ch5', 'Figma Auto Layout',       'Spacing, padding, fill/hug/fixed sizing modes.',       1, 50),
+    upsertTopic('ui-t9',  'ui-ch6', 'Design Tokens',           'Colour, spacing, typography tokens and theming.',      1, 45),
+    upsertTopic('ui-t10', 'ui-ch6', 'Component Variants',      'Variant properties, interactive components in Figma.', 2, 45),
+  ]);
 
-### useReducer
-Better for complex state logic with multiple sub-values.
-\`\`\`jsx
-const [state, dispatch] = useReducer(reducer, initialState);
-dispatch({ type: 'INCREMENT', payload: 1 });
-\`\`\``, 1, 50);
+  // ══════════════════════════════════════════════════════════════════════════
+  //  DEVOPS — Subjects / Chapters / Topics
+  // ══════════════════════════════════════════════════════════════════════════
+  const doContainers = await upsertSubject('do-containers', 'exam-devops', 'Containers & Orchestration', '🐳', 1);
+  const doCicd       = await upsertSubject('do-cicd',       'exam-devops', 'CI/CD & Pipelines',          '⚙️', 2);
+  const doCloud      = await upsertSubject('do-cloud',      'exam-devops', 'Cloud & Infrastructure',     '☁️', 3);
 
-  const tUseEffect = await upsertTopic('t-mern-useeffect', chHooks.id, 'useEffect & Lifecycle', `## useEffect
+  await upsertChapter('do-ch1', 'do-containers', 'Docker',             1, 'Images, containers, registries');
+  await upsertChapter('do-ch2', 'do-containers', 'Kubernetes',         2, 'Pods, deployments, services');
+  await upsertChapter('do-ch3', 'do-cicd',       'Pipeline Design',    1, 'Stages, gates, artefacts');
+  await upsertChapter('do-ch4', 'do-cicd',       'GitHub Actions',     2, 'Workflows, runners, secrets');
+  await upsertChapter('do-ch5', 'do-cloud',      'AWS Fundamentals',   1, 'EC2, S3, RDS, IAM, VPC');
+  await upsertChapter('do-ch6', 'do-cloud',      'IaC with Terraform', 2, 'Providers, resources, state');
 
-Runs after render. Replaces componentDidMount, componentDidUpdate, componentWillUnmount.
+  const doTopics = await Promise.all([
+    upsertTopic('do-t1',  'do-ch1', 'Docker Images & Containers', 'Layered FS, Dockerfile best practices, multi-stage builds.', 1, 50),
+    upsertTopic('do-t2',  'do-ch1', 'Docker Networking',          'Bridge, host, overlay networks; port mapping.',              2, 40),
+    upsertTopic('do-t3',  'do-ch2', 'K8s Pods & Deployments',     'ReplicaSets, rolling updates, rollbacks.',                   1, 55),
+    upsertTopic('do-t4',  'do-ch2', 'K8s Services & Ingress',     'ClusterIP, NodePort, LoadBalancer, Ingress controllers.',    2, 55),
+    upsertTopic('do-t5',  'do-ch3', 'CI/CD Pipeline Patterns',    'Trunk-based dev, blue-green, canary deployments.',           1, 50),
+    upsertTopic('do-t6',  'do-ch4', 'GitHub Actions Workflows',   'on: triggers, jobs, steps, matrix builds.',                  1, 45),
+    upsertTopic('do-t7',  'do-ch5', 'AWS Core Services',          'EC2 instance types, S3 storage classes, RDS Multi-AZ.',      1, 60),
+    upsertTopic('do-t8',  'do-ch5', 'AWS IAM & Security',         'Roles, policies, least-privilege, STS.',                     2, 50),
+    upsertTopic('do-t9',  'do-ch6', 'Terraform Basics',           'init, plan, apply, state management, modules.',              1, 55),
+    upsertTopic('do-t10', 'do-ch6', 'Terraform Modules',          'Reusable modules, remote state, workspaces.',                2, 50),
+  ]);
 
-\`\`\`jsx
-useEffect(() => {
-  // side effect here
-  return () => { /* cleanup */ };
-}, [dependencies]); // [] = run once, omit = every render
-\`\`\`
-
-### Common Patterns
-- Data fetching on mount
-- Event listener add/remove
-- WebSocket connect/disconnect`, 2, 55);
-
-  const chNodeAsync = await upsertChapter('ch-mern-async', mernNode.id, 'Async Node.js', 1, 'Event loop, promises, streams');
-  const tEventLoop  = await upsertTopic('t-mern-eventloop', chNodeAsync.id, 'Event Loop', `## Node.js Event Loop
-
-Single-threaded but non-blocking via event loop.
-
-### Phases (each tick)
-1. **timers** — setTimeout, setInterval callbacks
-2. **I/O callbacks** — deferred I/O errors
-3. **idle/prepare** — internal
-4. **poll** — new I/O events (blocking if queue empty)
-5. **check** — setImmediate callbacks
-6. **close callbacks** — socket.on('close')
-
-### Microtasks
-process.nextTick and Promise callbacks run between each phase.`, 1, 60);
-
-  const chMongoQuery = await upsertChapter('ch-mern-mongoq', mernMongo.id, 'Queries & Aggregation', 1, 'CRUD, pipeline, indexes');
-  const tAggregation = await upsertTopic('t-mern-agg', chMongoQuery.id, 'Aggregation Pipeline', `## MongoDB Aggregation Pipeline
-
-Series of stages transforming documents.
-
-### Common Stages
-\`\`\`js
-db.orders.aggregate([
-  { $match: { status: 'completed' } },       // filter
-  { $group: { _id: '$userId', total: { $sum: '$amount' } } }, // group
-  { $sort: { total: -1 } },                   // sort
-  { $limit: 10 },                             // limit
-  { $project: { userId: '$_id', total: 1 } }  // reshape
-])
-\`\`\``, 1, 65);
-
-  const chExpressMiddleware = await upsertChapter('ch-mern-middleware', mernExpress.id, 'Middleware & Routing', 1, 'Express middleware chain, routers');
-  const tMiddlewareExpress  = await upsertTopic('t-mern-mw', chExpressMiddleware.id, 'Express Middleware', `## Express Middleware
-
-Functions that execute in the request-response cycle.
-
-\`\`\`js
-app.use((req, res, next) => {
-  console.log(req.method, req.url);
-  next(); // pass to next middleware
-});
-\`\`\`
-
-### Types
-- **Application-level**: app.use()
-- **Router-level**: router.use()
-- **Error-handling**: (err, req, res, next)
-- **Built-in**: express.json(), express.static()
-- **Third-party**: morgan, helmet, cors`, 1, 50);
-
-  // Collect all topics
-  const allTopics = [
-    tTwoPtr, tSliding, tPrefixSum, tBst, tDfsBfs, tDpIntro, tKnapsack, tLb, tCaching,
-    tScheduling, tDeadlock, tGraphDm, tNorm, tOsi,
-    tAncient, tConst, tRatio,
-    tUseState, tUseEffect, tEventLoop, tAggregation, tMiddlewareExpress,
+  // ══════════════════════════════════════════════════════════════════════════
+  //  QUESTIONS
+  // ══════════════════════════════════════════════════════════════════════════
+  const questions = [
+    // ── SDE ──────────────────────────────────────────────────────────────
+    { id:'q-sde-1',  examId:'exam-sde', topicId:'sde-t1', subjectId:'sde-dsa', difficulty:'EASY',
+      text:'What is the time complexity of the two-pointer technique on a sorted array?',
+      options:{A:'O(n²)',B:'O(n log n)',C:'O(n)',D:'O(1)'}, answer:'C',
+      explanation:'Each pointer moves at most n steps, giving O(n) total.' },
+    { id:'q-sde-2',  examId:'exam-sde', topicId:'sde-t1', subjectId:'sde-dsa', difficulty:'MEDIUM',
+      text:'Which problem is best solved with the two-pointer approach?',
+      options:{A:'Finding a pair summing to target in a sorted array',B:'Finding the maximum subarray sum',C:'Counting inversions',D:'Finding all permutations'}, answer:'A',
+      explanation:'Two pointers work best on sorted arrays to find pairs efficiently.' },
+    { id:'q-sde-3',  examId:'exam-sde', topicId:'sde-t1', subjectId:'sde-dsa', difficulty:'HARD',
+      text:'In the 3-sum problem, what is the optimised time complexity using two pointers?',
+      options:{A:'O(n)',B:'O(n log n)',C:'O(n²)',D:'O(n³)'}, answer:'C',
+      explanation:'Sort O(n log n) + for each element run two-pointer O(n) = O(n²) total.' },
+    { id:'q-sde-4',  examId:'exam-sde', topicId:'sde-t2', subjectId:'sde-dsa', difficulty:'EASY',
+      text:'What type of problem does a fixed-size sliding window solve?',
+      options:{A:'Finding max/min/sum over k consecutive elements',B:'Sorting elements',C:'Graph traversal',D:'Tree balancing'}, answer:'A',
+      explanation:'Fixed windows slide across arrays to track stats over k elements in O(n).' },
+    { id:'q-sde-5',  examId:'exam-sde', topicId:'sde-t4', subjectId:'sde-dsa', difficulty:'EASY',
+      text:'What traversal of a BST produces elements in sorted order?',
+      options:{A:'Pre-order',B:'Post-order',C:'In-order',D:'Level-order'}, answer:'C',
+      explanation:'In-order (left → root → right) yields sorted output from a BST.' },
+    { id:'q-sde-6',  examId:'exam-sde', topicId:'sde-t5', subjectId:'sde-dsa', difficulty:'EASY',
+      text:'Which data structure does BFS use?',
+      options:{A:'Stack',B:'Queue',C:'Heap',D:'Set'}, answer:'B',
+      explanation:'BFS uses a queue (FIFO) to explore nodes level by level.' },
+    { id:'q-sde-7',  examId:'exam-sde', topicId:'sde-t5', subjectId:'sde-dsa', difficulty:'MEDIUM',
+      text:'BFS finds the shortest path in which type of graph?',
+      options:{A:'Weighted directed',B:'Unweighted undirected',C:'Negative weight',D:'Sparse DAG'}, answer:'B',
+      explanation:'BFS guarantees shortest path only in unweighted graphs.' },
+    { id:'q-sde-8',  examId:'exam-sde', topicId:'sde-t5', subjectId:'sde-dsa', difficulty:'HARD',
+      text:'Time complexity of DFS on a graph with V vertices and E edges?',
+      options:{A:'O(V)',B:'O(E)',C:'O(V + E)',D:'O(V × E)'}, answer:'C',
+      explanation:'DFS visits every vertex and edge exactly once: O(V + E).' },
+    { id:'q-sde-9',  examId:'exam-sde', topicId:'sde-t7', subjectId:'sde-dsa', difficulty:'MEDIUM',
+      text:'In the 0/1 knapsack problem, what does "0/1" mean?',
+      options:{A:'Items can be split',B:'Each item is either taken or not',C:'Only 0 or 1 items exist',D:'Values are binary'}, answer:'B',
+      explanation:'Each item must be fully included or excluded — no fractions.' },
+    { id:'q-sde-10', examId:'exam-sde', topicId:'sde-t7', subjectId:'sde-dsa', difficulty:'HARD',
+      text:'Space-optimised 0/1 knapsack DP runs in what space complexity?',
+      options:{A:'O(n²)',B:'O(n × W)',C:'O(W)',D:'O(n)'}, answer:'C',
+      explanation:'Using a 1D array and iterating backwards reduces space to O(W).' },
+    // ── Frontend ─────────────────────────────────────────────────────────
+    { id:'q-fe-1',  examId:'exam-frontend', topicId:'fe-t1', subjectId:'fe-core', difficulty:'EASY',
+      text:'Which HTML element represents a self-contained piece of content?',
+      options:{A:'<section>',B:'<article>',C:'<aside>',D:'<div>'}, answer:'B',
+      explanation:'<article> is for independent, self-contained content like a blog post.' },
+    { id:'q-fe-2',  examId:'exam-frontend', topicId:'fe-t2', subjectId:'fe-core', difficulty:'MEDIUM',
+      text:'What is the minimum contrast ratio for normal text under WCAG AA?',
+      options:{A:'2.5:1',B:'3:1',C:'4.5:1',D:'7:1'}, answer:'C',
+      explanation:'WCAG AA requires 4.5:1 for normal text, 3:1 for large text.' },
+    { id:'q-fe-3',  examId:'exam-frontend', topicId:'fe-t3', subjectId:'fe-core', difficulty:'EASY',
+      text:'In flexbox, which property controls spacing along the main axis?',
+      options:{A:'align-items',B:'justify-content',C:'align-content',D:'flex-direction'}, answer:'B',
+      explanation:'justify-content distributes space along the main axis.' },
+    { id:'q-fe-4',  examId:'exam-frontend', topicId:'fe-t4', subjectId:'fe-core', difficulty:'MEDIUM',
+      text:'What does the CSS Grid value "fr" represent?',
+      options:{A:'Fixed ratio',B:'Fractional unit of available space',C:'Font-relative unit',D:'Frame unit'}, answer:'B',
+      explanation:'fr is a fractional unit dividing remaining space proportionally.' },
+    { id:'q-fe-5',  examId:'exam-frontend', topicId:'fe-t5', subjectId:'fe-react', difficulty:'EASY',
+      text:'When does useEffect run by default (no dependency array)?',
+      options:{A:'Only on mount',B:'Only on unmount',C:'After every render',D:'Never'}, answer:'C',
+      explanation:'Without a dependency array, useEffect runs after every render.' },
+    { id:'q-fe-6',  examId:'exam-frontend', topicId:'fe-t5', subjectId:'fe-react', difficulty:'MEDIUM',
+      text:'What does the cleanup function returned from useEffect do?',
+      options:{A:'Runs before the next effect or unmount',B:'Runs only on unmount',C:'Runs before every render',D:'Cancels all state updates'}, answer:'A',
+      explanation:'The cleanup runs before the next effect execution and on unmount.' },
+    { id:'q-fe-7',  examId:'exam-frontend', topicId:'fe-t7', subjectId:'fe-react', difficulty:'MEDIUM',
+      text:'What problem does the Context API solve?',
+      options:{A:'Async data fetching',B:'Prop drilling',C:'Route management',D:'DOM manipulation'}, answer:'B',
+      explanation:'Context lets you pass data through the tree without prop drilling.' },
+    { id:'q-fe-8',  examId:'exam-frontend', topicId:'fe-t8', subjectId:'fe-perf', difficulty:'MEDIUM',
+      text:'What is the "good" threshold for Largest Contentful Paint (LCP)?',
+      options:{A:'Under 1 second',B:'Under 2.5 seconds',C:'Under 4 seconds',D:'Under 5 seconds'}, answer:'B',
+      explanation:'Google defines a good LCP as 2.5 seconds or less.' },
+    { id:'q-fe-9',  examId:'exam-frontend', topicId:'fe-t9', subjectId:'fe-perf', difficulty:'EASY',
+      text:'Which React Testing Library query should you prefer for accessibility?',
+      options:{A:'getByTestId',B:'getByClassName',C:'getByRole',D:'getByIndex'}, answer:'C',
+      explanation:'getByRole mirrors how assistive technology accesses elements.' },
+    { id:'q-fe-10', examId:'exam-frontend', topicId:'fe-t4', subjectId:'fe-core', difficulty:'HARD',
+      text:'How do you place an item in row 2, spanning columns 1–3 in CSS Grid?',
+      options:{A:'grid-area: 2 / 1 / 3 / 3',B:'grid-area: 2 / 1 / 3 / 4',C:'grid-column: 1 / 3; grid-row: 2',D:'grid-column: 1 / span 3; grid-row: 2'}, answer:'D',
+      explanation:'grid-column: 1 / span 3 spans 3 columns; grid-row: 2 places it in row 2.' },
+    // ── Backend ──────────────────────────────────────────────────────────
+    { id:'q-be-1',  examId:'exam-backend', topicId:'be-t1', subjectId:'be-api', difficulty:'EASY',
+      text:'Which HTTP method is idempotent but NOT safe?',
+      options:{A:'GET',B:'POST',C:'PUT',D:'DELETE'}, answer:'C',
+      explanation:'PUT is idempotent (same result repeated) but changes state, so not safe.' },
+    { id:'q-be-2',  examId:'exam-backend', topicId:'be-t1', subjectId:'be-api', difficulty:'MEDIUM',
+      text:'What HTTP status code means "resource created successfully"?',
+      options:{A:'200',B:'201',C:'204',D:'202'}, answer:'B',
+      explanation:'201 Created is the correct response for a successful POST that creates a resource.' },
+    { id:'q-be-3',  examId:'exam-backend', topicId:'be-t2', subjectId:'be-api', difficulty:'MEDIUM',
+      text:'What is the recommended way to version a REST API?',
+      options:{A:'Query param: ?version=1',B:'URL path: /api/v1/',C:'Header: X-API-Version: 1',D:'Request body field'}, answer:'B',
+      explanation:'URL path versioning (/v1/) is the most widely adopted and visible approach.' },
+    { id:'q-be-4',  examId:'exam-backend', topicId:'be-t4', subjectId:'be-db', difficulty:'EASY',
+      text:'Which JOIN returns only rows with matching values in both tables?',
+      options:{A:'LEFT JOIN',B:'RIGHT JOIN',C:'INNER JOIN',D:'FULL OUTER JOIN'}, answer:'C',
+      explanation:'INNER JOIN returns the intersection — rows present in both tables.' },
+    { id:'q-be-5',  examId:'exam-backend', topicId:'be-t5', subjectId:'be-db', difficulty:'MEDIUM',
+      text:'What type of index stores all queried columns, avoiding a table lookup?',
+      options:{A:'Partial index',B:'Covering index',C:'Clustered index',D:'Bitmap index'}, answer:'B',
+      explanation:'A covering index satisfies a query entirely from the index without touching the table.' },
+    { id:'q-be-6',  examId:'exam-backend', topicId:'be-t8', subjectId:'be-sec', difficulty:'EASY',
+      text:'What are the three parts of a JWT?',
+      options:{A:'Header, Payload, Signature',B:'Key, Value, Hash',C:'Issuer, Subject, Audience',D:'Token, Secret, Expiry'}, answer:'A',
+      explanation:'JWTs consist of Base64URL-encoded Header.Payload.Signature.' },
+    { id:'q-be-7',  examId:'exam-backend', topicId:'be-t10', subjectId:'be-sec', difficulty:'MEDIUM',
+      text:'Which OWASP attack injects malicious code into a database query?',
+      options:{A:'XSS',B:'CSRF',C:'SQL Injection',D:'SSRF'}, answer:'C',
+      explanation:'SQL Injection manipulates database queries via unsanitised user input.' },
+    { id:'q-be-8',  examId:'exam-backend', topicId:'be-t3', subjectId:'be-api', difficulty:'HARD',
+      text:'What is the N+1 problem in GraphQL?',
+      options:{A:'Sending N+1 concurrent requests',B:'Each item in a list triggers an extra database query',C:'Pagination returning N+1 results',D:'Resolver nesting beyond depth 1'}, answer:'B',
+      explanation:'Each list item triggers a separate DB call. DataLoader solves this by batching.' },
+    { id:'q-be-9',  examId:'exam-backend', topicId:'be-t7', subjectId:'be-db', difficulty:'MEDIUM',
+      text:'In cache-aside (lazy loading) pattern, when is the cache populated?',
+      options:{A:'On every write to the DB',B:'On application startup',C:'On a cache miss',D:'On a scheduled job'}, answer:'C',
+      explanation:'Cache-aside populates the cache only when data is requested and not found (miss).' },
+    { id:'q-be-10', examId:'exam-backend', topicId:'be-t9', subjectId:'be-sec', difficulty:'HARD',
+      text:'In OAuth2 Authorization Code flow with PKCE, what does the code_verifier protect against?',
+      options:{A:'Token expiry',B:'Replay attacks',C:'Authorization code interception',D:'Scope escalation'}, answer:'C',
+      explanation:'PKCE ensures that even if the auth code is intercepted, it cannot be exchanged without the verifier.' },
+    // ── UI/UX ────────────────────────────────────────────────────────────
+    { id:'q-ui-1',  examId:'exam-ui', topicId:'ui-t1', subjectId:'ui-princ', difficulty:'EASY',
+      text:'What term describes visible size difference between text elements to show importance?',
+      options:{A:'Kerning',B:'Leading',C:'Type hierarchy',D:'Tracking'}, answer:'C',
+      explanation:'Type hierarchy uses size, weight, and colour to rank visual importance.' },
+    { id:'q-ui-2',  examId:'exam-ui', topicId:'ui-t2', subjectId:'ui-princ', difficulty:'MEDIUM',
+      text:'WCAG AAA requires a contrast ratio of at least:',
+      options:{A:'3:1',B:'4.5:1',C:'7:1',D:'10:1'}, answer:'C',
+      explanation:'WCAG AAA requires 7:1 for normal text, a stricter standard than AA.' },
+    { id:'q-ui-3',  examId:'exam-ui', topicId:'ui-t3', subjectId:'ui-princ', difficulty:'EASY',
+      text:'Which Gestalt principle explains why items placed close together are perceived as a group?',
+      options:{A:'Similarity',B:'Continuity',C:'Proximity',D:'Closure'}, answer:'C',
+      explanation:'The Gestalt principle of proximity: nearby objects are seen as related.' },
+    { id:'q-ui-4',  examId:'exam-ui', topicId:'ui-t5', subjectId:'ui-research', difficulty:'MEDIUM',
+      text:'What is the "think-aloud" protocol in usability testing?',
+      options:{A:'Users write feedback after testing',B:'Users verbalize thoughts while completing tasks',C:'Researcher talks during the session',D:'Automated voice recording analysis'}, answer:'B',
+      explanation:'Think-aloud captures users\' real-time cognitive process during task completion.' },
+    { id:'q-ui-5',  examId:'exam-ui', topicId:'ui-t8', subjectId:'ui-tools', difficulty:'EASY',
+      text:'In Figma Auto Layout, what does "hug contents" mean for a frame?',
+      options:{A:'Frame has fixed dimensions',B:'Frame fills the parent container',C:'Frame shrinks to fit its contents',D:'Frame clips overflow'}, answer:'C',
+      explanation:'"Hug contents" makes the frame size itself to wrap tightly around its children.' },
+    { id:'q-ui-6',  examId:'exam-ui', topicId:'ui-t9', subjectId:'ui-tools', difficulty:'MEDIUM',
+      text:'What is the primary purpose of design tokens in a design system?',
+      options:{A:'Store component code',B:'Define reusable style values (colours, spacing)',C:'Generate documentation',D:'Track version history'}, answer:'B',
+      explanation:'Design tokens are named values for shared styles, enabling consistent theming.' },
+    { id:'q-ui-7',  examId:'exam-ui', topicId:'ui-t4', subjectId:'ui-princ', difficulty:'MEDIUM',
+      text:'What are the four components of a microinteraction?',
+      options:{A:'Trigger, Rules, Feedback, Loops & Modes',B:'Input, Process, Output, Error',C:'State, Action, Transition, End',D:'Start, Middle, End, Loop'}, answer:'A',
+      explanation:'Dan Saffer\'s model: Trigger → Rules → Feedback → Loops & Modes.' },
+    { id:'q-ui-8',  examId:'exam-ui', topicId:'ui-t7', subjectId:'ui-research', difficulty:'MEDIUM',
+      text:'What distinguishes a proto-persona from a research-based persona?',
+      options:{A:'Proto-personas use real data',B:'Proto-personas are hypothesis-based, not from research',C:'Proto-personas include demographic data only',D:'Proto-personas are validated by users'}, answer:'B',
+      explanation:'Proto-personas are created from assumptions when research hasn\'t been done yet.' },
+    // ── DevOps ───────────────────────────────────────────────────────────
+    { id:'q-do-1',  examId:'exam-devops', topicId:'do-t1', subjectId:'do-containers', difficulty:'EASY',
+      text:'What is the correct command to build a Docker image from a Dockerfile?',
+      options:{A:'docker run -build',B:'docker build -t myapp .',C:'docker create myapp',D:'docker image run .'}, answer:'B',
+      explanation:'docker build -t tags the image with a name; the . specifies the build context.' },
+    { id:'q-do-2',  examId:'exam-devops', topicId:'do-t1', subjectId:'do-containers', difficulty:'MEDIUM',
+      text:'What is the benefit of multi-stage Docker builds?',
+      options:{A:'Run multiple containers simultaneously',B:'Reduce final image size by excluding build tools',C:'Enable parallel layer downloads',D:'Support multiple base OS layers'}, answer:'B',
+      explanation:'Multi-stage builds copy only necessary artefacts, keeping the final image lean.' },
+    { id:'q-do-3',  examId:'exam-devops', topicId:'do-t3', subjectId:'do-containers', difficulty:'EASY',
+      text:'What is the smallest deployable unit in Kubernetes?',
+      options:{A:'Container',B:'Node',C:'Pod',D:'Deployment'}, answer:'C',
+      explanation:'A Pod is the smallest unit — it wraps one or more containers.' },
+    { id:'q-do-4',  examId:'exam-devops', topicId:'do-t4', subjectId:'do-containers', difficulty:'MEDIUM',
+      text:'Which Kubernetes Service type exposes a service internally within the cluster only?',
+      options:{A:'NodePort',B:'LoadBalancer',C:'ExternalName',D:'ClusterIP'}, answer:'D',
+      explanation:'ClusterIP is the default type — only accessible within the cluster.' },
+    { id:'q-do-5',  examId:'exam-devops', topicId:'do-t5', subjectId:'do-cicd', difficulty:'MEDIUM',
+      text:'In a blue-green deployment, what does "green" represent?',
+      options:{A:'The old production environment',B:'The new version being deployed',C:'The staging environment',D:'Canary traffic percentage'}, answer:'B',
+      explanation:'Blue is live production; green is the new version. Traffic switches after validation.' },
+    { id:'q-do-6',  examId:'exam-devops', topicId:'do-t7', subjectId:'do-cloud', difficulty:'EASY',
+      text:'What does AWS IAM stand for?',
+      options:{A:'Internet Access Manager',B:'Identity and Access Management',C:'Internal Application Monitor',D:'Integrated Auth Module'}, answer:'B',
+      explanation:'IAM controls who can access AWS resources and what actions they can perform.' },
+    { id:'q-do-7',  examId:'exam-devops', topicId:'do-t9', subjectId:'do-cloud', difficulty:'MEDIUM',
+      text:'What does "terraform plan" do?',
+      options:{A:'Creates infrastructure immediately',B:'Shows what changes Terraform will make without applying them',C:'Validates syntax only',D:'Destroys existing resources'}, answer:'B',
+      explanation:'terraform plan is a dry run showing the diff between current and desired state.' },
+    { id:'q-do-8',  examId:'exam-devops', topicId:'do-t9', subjectId:'do-cloud', difficulty:'HARD',
+      text:'What happens to Terraform state when two people run "terraform apply" simultaneously without locking?',
+      options:{A:'Both succeed independently',B:'State file corruption or conflict',C:'Terraform auto-merges changes',D:'The second apply always wins'}, answer:'B',
+      explanation:'Without state locking (e.g., S3 + DynamoDB), concurrent applies can corrupt state.' },
+    { id:'q-do-9',  examId:'exam-devops', topicId:'do-t6', subjectId:'do-cicd', difficulty:'MEDIUM',
+      text:'In GitHub Actions, what does a matrix strategy allow?',
+      options:{A:'Running a job across multiple OS or dependency versions',B:'Deploying to multiple cloud providers',C:'Triggering multiple workflows simultaneously',D:'Sharing secrets between repositories'}, answer:'A',
+      explanation:'Matrix builds run the same job with different combinations of variables (e.g., node versions).' },
+    { id:'q-do-10', examId:'exam-devops', topicId:'do-t8', subjectId:'do-cloud', difficulty:'HARD',
+      text:'What is the principle of least privilege in AWS IAM?',
+      options:{A:'Grant all permissions by default and remove as needed',B:'Grant only the permissions required to perform a task',C:'Use root credentials for admin tasks',D:'Share IAM roles across all services'}, answer:'B',
+      explanation:'PoLP minimises security risk by granting only the minimum necessary permissions.' },
   ];
 
-  // Collect all subjects
-  const allSubjects = [
-    sdeDsa, sdeSd, sdeBeh,
-    gateOs, gateDm, gateCn, gateDbms,
-    upscGs1, upscGs2, upscCsat,
-    mernReact, mernNode, mernMongo, mernExpress,
-  ];
-
-  console.log(`  ✓ ${allTopics.length} topics across ${allSubjects.length} subjects`);
-
-  // ══════════════════════════════════════════════════════════════════════════
-  //  QUESTIONS  (10 per topic)
-  // ══════════════════════════════════════════════════════════════════════════
-
-  const upsertQ = (id, topicId, examId, text, options, answer, explanation, difficulty, tags) =>
-    prisma.question.upsert({
-      where: { id }, update: {},
-      create: { id, topicId, examId, text, type: 'MCQ', options, answer, explanation, difficulty, tags },
-    });
-
-  // ── SDE: Two Pointers ──────────────────────────────────────────────────────
-  await upsertQ('q-twoptr-1', tTwoPtr.id, sdeExam.id,
-    'What is the time complexity of the two-pointer approach to find a pair with target sum in a sorted array?',
-    ['O(n)', 'O(n log n)', 'O(n²)', 'O(log n)'], 'O(n)',
-    'Both pointers traverse the array at most once, giving O(n) time.', 'EASY', ['two-pointers', 'arrays']);
-  await upsertQ('q-twoptr-2', tTwoPtr.id, sdeExam.id,
-    'Which problem CANNOT be directly solved using the two-pointer technique?',
-    ['Finding a pair with target sum in a sorted array', 'Longest common subsequence', 'Container with most water', 'Valid palindrome check'],
-    'Longest common subsequence',
-    'LCS is a DP problem and does not map to a two-pointer strategy.', 'MEDIUM', ['two-pointers', 'dp']);
-  await upsertQ('q-twoptr-3', tTwoPtr.id, sdeExam.id,
-    'In the "3Sum" problem, after fixing one element, what technique is used for the remaining part?',
-    ['Binary search', 'Two pointers on the remaining sorted subarray', 'Hash map', 'Stack'],
-    'Two pointers on the remaining sorted subarray',
-    'We fix one element, then use two pointers on the sorted rest to find pairs summing to its negative.', 'MEDIUM', ['two-pointers', 'sorting']);
-  await upsertQ('q-twoptr-4', tTwoPtr.id, sdeExam.id,
-    'What is the space complexity of the two-pointer technique?',
-    ['O(n)', 'O(log n)', 'O(1)', 'O(n²)'], 'O(1)',
-    'Two pointers use constant extra space — just two index variables.', 'EASY', ['two-pointers']);
-  await upsertQ('q-twoptr-5', tTwoPtr.id, sdeExam.id,
-    'Which invariant must the array satisfy for classic two-pointer to work correctly?',
-    ['Array must be sorted', 'Array must have distinct elements', 'Array must have even length', 'Array must be non-negative'],
-    'Array must be sorted',
-    'Sorting enables us to make directional decisions (move left or right pointer) based on the current sum.', 'EASY', ['two-pointers', 'sorting']);
-
-  // ── SDE: Sliding Window ────────────────────────────────────────────────────
-  await upsertQ('q-sliding-1', tSliding.id, sdeExam.id,
-    'What is the time complexity of the sliding window technique for a fixed-size window of k on an array of n elements?',
-    ['O(n*k)', 'O(n)', 'O(k)', 'O(log n)'], 'O(n)',
-    'Each element is added and removed from the window at most once, giving O(n) overall.', 'EASY', ['sliding-window']);
-  await upsertQ('q-sliding-2', tSliding.id, sdeExam.id,
-    'Which data structure is commonly used in the sliding window maximum problem to achieve O(n) time?',
-    ['Stack', 'Max-Heap', 'Monotonic Deque', 'Hash Map'], 'Monotonic Deque',
-    'A monotonic deque maintains elements in decreasing order, allowing O(1) max lookup.', 'HARD', ['sliding-window', 'deque']);
-  await upsertQ('q-sliding-3', tSliding.id, sdeExam.id,
-    'In the variable-size sliding window, when do we shrink the left pointer?',
-    ['When window size exceeds k', 'When the current window violates the constraint', 'When we find the answer', 'Randomly'],
-    'When the current window violates the constraint',
-    'We expand right to explore and shrink left to restore validity of the window constraint.', 'MEDIUM', ['sliding-window']);
-  await upsertQ('q-sliding-4', tSliding.id, sdeExam.id,
-    'What does the "Minimum Window Substring" problem require?',
-    ['Fixed-size window', 'Variable-size window with frequency tracking', 'Two sorted arrays', 'Binary search'],
-    'Variable-size window with frequency tracking',
-    'We need a variable window and frequency maps to check if all characters of t are covered.', 'HARD', ['sliding-window', 'hash-map']);
-  await upsertQ('q-sliding-5', tSliding.id, sdeExam.id,
-    'What is the key difference between sliding window and two pointers?',
-    ['Sliding window always uses a fixed size', 'Sliding window typically works on subarrays/substrings; two pointers on pairs', 'Two pointers requires sorted input; sliding window does not', 'They are identical techniques'],
-    'Sliding window typically works on subarrays/substrings; two pointers on pairs',
-    'Sliding window focuses on contiguous ranges; two pointers often find pairs satisfying a condition.', 'MEDIUM', ['sliding-window', 'two-pointers']);
-
-  // ── SDE: BST ───────────────────────────────────────────────────────────────
-  await upsertQ('q-bst-1', tBst.id, sdeExam.id,
-    'What traversal of a BST yields elements in sorted (ascending) order?',
-    ['Pre-order', 'Post-order', 'In-order', 'Level-order'], 'In-order',
-    'In-order traversal (left → root → right) visits BST nodes in sorted order.', 'EASY', ['bst', 'trees']);
-  await upsertQ('q-bst-2', tBst.id, sdeExam.id,
-    'What is the worst-case time complexity for searching in an unbalanced BST?',
-    ['O(log n)', 'O(n log n)', 'O(n)', 'O(1)'], 'O(n)',
-    'In a skewed tree (like a linked list), every node must be visited — O(n).', 'MEDIUM', ['bst', 'complexity']);
-  await upsertQ('q-bst-3', tBst.id, sdeExam.id,
-    'When deleting a node with two children from a BST, which node replaces it?',
-    ['Any leaf node', 'In-order predecessor only', 'In-order successor (or predecessor)', 'Root of left subtree'],
-    'In-order successor (or predecessor)',
-    'The in-order successor (smallest in right subtree) preserves BST properties.', 'MEDIUM', ['bst', 'deletion']);
-  await upsertQ('q-bst-4', tBst.id, sdeExam.id,
-    'Which self-balancing BST guarantees O(log n) for insert, delete, and search?',
-    ['Plain BST', 'Heap', 'AVL Tree', 'Hash Table'], 'AVL Tree',
-    'AVL trees maintain height balance (|height difference| ≤ 1) via rotations.', 'MEDIUM', ['bst', 'avl']);
-  await upsertQ('q-bst-5', tBst.id, sdeExam.id,
-    'What is the minimum number of nodes in a BST of height h?',
-    ['h', 'h + 1', '2h', 'h²'], 'h + 1',
-    'A BST of height h can have as few as h+1 nodes (one per level in a skewed tree).', 'HARD', ['bst', 'height']);
-
-  // ── SDE: DP ────────────────────────────────────────────────────────────────
-  await upsertQ('q-dp-1', tDpIntro.id, sdeExam.id,
-    'What are the two key properties required for dynamic programming to be applicable?',
-    ['Greedy choice + optimal substructure', 'Optimal substructure + overlapping subproblems', 'Divide-and-conquer + memoization', 'Sorting + recursion'],
-    'Optimal substructure + overlapping subproblems',
-    'DP applies when optimal solution contains optimal sub-solutions and subproblems recur.', 'MEDIUM', ['dp', 'fundamentals']);
-  await upsertQ('q-dp-2', tDpIntro.id, sdeExam.id,
-    'What is memoization?',
-    ['Pre-sorting data before processing', 'Caching results of expensive function calls to avoid recomputation', 'Converting recursion to iteration', 'A graph traversal technique'],
-    'Caching results of expensive function calls to avoid recomputation',
-    'Memoization stores computed results so each unique subproblem is solved only once.', 'EASY', ['dp', 'memoization']);
-  await upsertQ('q-dp-3', tDpIntro.id, sdeExam.id,
-    'What is the space complexity of Fibonacci with tabulation (bottom-up)?',
-    ['O(n)', 'O(1) with space optimization', 'O(n²)', 'O(log n)'],
-    'O(1) with space optimization',
-    'Fibonacci only needs the last two values, so we can use two variables instead of a full array.', 'MEDIUM', ['dp', 'space-complexity']);
-  await upsertQ('q-dp-4', tDpIntro.id, sdeExam.id,
-    'Which of the following is a classic DP problem?',
-    ['Binary search', 'Merge sort', 'Longest Common Subsequence', 'BFS shortest path'],
-    'Longest Common Subsequence',
-    'LCS has optimal substructure and overlapping subproblems, making it a canonical DP problem.', 'EASY', ['dp', 'lcs']);
-  await upsertQ('q-dp-5', tDpIntro.id, sdeExam.id,
-    'In the coin change problem (minimum coins for amount n), what is the time complexity with DP?',
-    ['O(n)', 'O(n × k) where k is number of coin types', 'O(k log n)', 'O(2^n)'],
-    'O(n × k) where k is number of coin types',
-    'We fill a dp array of size n+1, and for each amount we try all k coin denominations.', 'MEDIUM', ['dp', 'coin-change']);
-
-  // ── GATE: CPU Scheduling ───────────────────────────────────────────────────
-  await upsertQ('q-sched-1', tScheduling.id, gateExam.id,
-    'Which scheduling algorithm can lead to starvation of long processes?',
-    ['Round Robin', 'FCFS', 'Shortest Job First (SJF)', 'FIFO'], 'Shortest Job First (SJF)',
-    'SJF always picks the shortest job, potentially starving long-running processes indefinitely.', 'MEDIUM', ['scheduling', 'os']);
-  await upsertQ('q-sched-2', tScheduling.id, gateExam.id,
-    'What is the average waiting time in FCFS for processes with burst times [6, 2, 8, 3] arriving at t=0?',
-    ['5.25 ms', '8.75 ms', '4.75 ms', '6 ms'], '5.25 ms',
-    'Wait times: P1=0, P2=6, P3=8, P4=16. Average = (0+6+8+16)/4 = 30/4 = 7.5... recalculating: 0+6+8+16=30, avg=7.5. Closest: none — actual answer is 7.5 but shown as EASY for concept.', 'HARD', ['scheduling', 'fcfs']);
-  await upsertQ('q-sched-3', tScheduling.id, gateExam.id,
-    'Round Robin scheduling with time quantum q is best suited for:',
-    ['Batch processing systems', 'Real-time systems with strict deadlines', 'Interactive time-sharing systems', 'Single-user systems'],
-    'Interactive time-sharing systems',
-    'RR provides fair CPU time distribution, making it ideal for interactive systems requiring responsiveness.', 'MEDIUM', ['scheduling', 'round-robin']);
-  await upsertQ('q-sched-4', tScheduling.id, gateExam.id,
-    'Turnaround time is defined as:',
-    ['CPU burst time', 'Completion time minus arrival time', 'Waiting time plus burst time', 'Response time plus waiting time'],
-    'Completion time minus arrival time',
-    'TAT = Completion Time − Arrival Time. It measures total time a process spends in the system.', 'EASY', ['scheduling', 'metrics']);
-  await upsertQ('q-sched-5', tScheduling.id, gateExam.id,
-    'Which scheduling algorithm minimizes average waiting time for a known set of non-preemptive processes?',
-    ['FCFS', 'Round Robin', 'SJF (non-preemptive)', 'Priority Scheduling'],
-    'SJF (non-preemptive)',
-    'SJF is provably optimal for minimizing average waiting time when all burst times are known.', 'MEDIUM', ['scheduling', 'sjf']);
-
-  // ── GATE: Deadlocks ────────────────────────────────────────────────────────
-  await upsertQ('q-dead-1', tDeadlock.id, gateExam.id,
-    'How many Coffman conditions must hold simultaneously for a deadlock to occur?',
-    ['1', '2', '3', '4'], '4',
-    'All four conditions (mutual exclusion, hold and wait, no preemption, circular wait) must hold simultaneously.', 'EASY', ['deadlock', 'os']);
-  await upsertQ('q-dead-2', tDeadlock.id, gateExam.id,
-    'Which deadlock handling strategy uses the Banker\'s algorithm?',
-    ['Deadlock prevention', 'Deadlock avoidance', 'Deadlock detection', 'Deadlock recovery'],
-    'Deadlock avoidance',
-    'Banker\'s algorithm is an avoidance algorithm — it checks safe states before granting resources.', 'MEDIUM', ['deadlock', 'bankers']);
-  await upsertQ('q-dead-3', tDeadlock.id, gateExam.id,
-    'Eliminating which Coffman condition is typically used to prevent deadlocks in practice?',
-    ['Mutual Exclusion', 'Hold and Wait', 'No Preemption', 'Circular Wait'],
-    'Circular Wait',
-    'Imposing a total ordering on resource types and requiring processes to request in order eliminates circular wait.', 'MEDIUM', ['deadlock', 'prevention']);
-  await upsertQ('q-dead-4', tDeadlock.id, gateExam.id,
-    'In resource allocation graphs, a deadlock is indicated by:',
-    ['A tree structure', 'A cycle in a multi-instance resource system with all instances assigned', 'Any edge from process to resource', 'Isolated nodes'],
-    'A cycle in a multi-instance resource system with all instances assigned',
-    'A cycle is necessary for deadlock; in single-instance systems it\'s sufficient; in multi-instance a wait-for graph cycle is needed.', 'HARD', ['deadlock', 'graphs']);
-  await upsertQ('q-dead-5', tDeadlock.id, gateExam.id,
-    'What is the "safe state" concept in deadlock avoidance?',
-    ['All processes are running', 'There exists a sequence in which all processes can complete', 'No process is waiting', 'Resources are not shared'],
-    'There exists a sequence in which all processes can complete',
-    'A safe state guarantees a safe sequence exists where each process can eventually get all needed resources.', 'MEDIUM', ['deadlock', 'safe-state']);
-
-  // ── GATE: Normalization ────────────────────────────────────────────────────
-  await upsertQ('q-norm-1', tNorm.id, gateExam.id,
-    'A relation is in 1NF if:',
-    ['It has no transitive dependencies', 'All attributes are atomic (no multi-valued or composite attributes)', 'Every non-key attribute is fully dependent on primary key', 'Every determinant is a candidate key'],
-    'All attributes are atomic (no multi-valued or composite attributes)',
-    '1NF requires atomic values in every cell — no sets, arrays, or nested structures.', 'EASY', ['normalization', 'dbms']);
-  await upsertQ('q-norm-2', tNorm.id, gateExam.id,
-    'Relation R(A, B, C) has FD: A → B, B → C. R violates which normal form?',
-    ['1NF', '2NF', '3NF', 'BCNF'], '3NF',
-    'B → C is a transitive dependency (A → B → C). 3NF eliminates transitive dependencies.', 'MEDIUM', ['normalization', 'fd']);
-  await upsertQ('q-norm-3', tNorm.id, gateExam.id,
-    'Which decomposition property ensures no spurious tuples are generated when joining?',
-    ['Dependency-preserving', 'Lossless-join', 'Minimal cover', 'Normal form'],
-    'Lossless-join',
-    'Lossless-join decomposition guarantees that natural join of projections recovers the original relation.', 'MEDIUM', ['normalization', 'decomposition']);
-  await upsertQ('q-norm-4', tNorm.id, gateExam.id,
-    'BCNF is stricter than 3NF because:',
-    ['It allows no partial dependencies', 'Every determinant must be a candidate key (no exceptions)', 'It handles multi-valued dependencies', 'It requires 4NF compliance'],
-    'Every determinant must be a candidate key (no exceptions)',
-    '3NF allows non-candidate-key determinants for prime attributes; BCNF does not.', 'HARD', ['normalization', 'bcnf']);
-  await upsertQ('q-norm-5', tNorm.id, gateExam.id,
-    'A partial dependency means:',
-    ['A non-key attribute depends on the full composite primary key', 'A non-key attribute depends on only part of the composite primary key', 'Two attributes depend on each other', 'A key attribute depends on another key attribute'],
-    'A non-key attribute depends on only part of the composite primary key',
-    '2NF eliminates partial dependencies — all non-key attributes must depend on the whole key.', 'MEDIUM', ['normalization', '2nf']);
-
-  // ── UPSC: Ancient India ────────────────────────────────────────────────────
-  await upsertQ('q-ancient-1', tAncient.id, upscExam.id,
-    'The Indus Valley Civilisation is also known as the:',
-    ['Aryan Civilisation', 'Harappan Civilisation', 'Dravidian Civilisation', 'Vedic Civilisation'],
-    'Harappan Civilisation',
-    'Named after Harappa, one of the first and largest sites discovered (1921). IVC = Harappan Civilisation.', 'EASY', ['history', 'ancient-india']);
-  await upsertQ('q-ancient-2', tAncient.id, upscExam.id,
-    'The "Great Bath" discovered at Mohenjo-daro is believed to have been used for:',
-    ['Drinking water storage', 'Ritual bathing or religious purposes', 'Fish farming', 'Naval training'],
-    'Ritual bathing or religious purposes',
-    'The elaborate Great Bath (12m × 7m × 2.4m) is considered a ritual purification tank.', 'MEDIUM', ['history', 'harappan']);
-  await upsertQ('q-ancient-3', tAncient.id, upscExam.id,
-    'Who was the author of Arthashastra, the treatise on statecraft?',
-    ['Ashoka', 'Chandragupta Maurya', 'Kautilya (Chanakya)', 'Panini'],
-    'Kautilya (Chanakya)',
-    'Kautilya (also called Chanakya or Vishnugupta) wrote the Arthashastra, covering economics, military strategy, and statecraft.', 'EASY', ['history', 'maurya']);
-  await upsertQ('q-ancient-4', tAncient.id, upscExam.id,
-    'The rock edicts of Ashoka were written primarily in which script?',
-    ['Sanskrit', 'Pali in Brahmi script', 'Tamil', 'Devanagari'],
-    'Pali in Brahmi script',
-    'Most Ashokan edicts use Pali language in Brahmi script; some northwest edicts use Kharosthi or Aramaic.', 'MEDIUM', ['history', 'ashoka']);
-  await upsertQ('q-ancient-5', tAncient.id, upscExam.id,
-    'Which of the following is NOT a feature of Indus Valley urban planning?',
-    ['Grid-pattern street layout', 'Underground brick-lined drains', 'Large stone temples like Parthenon', 'Citadel separate from lower town'],
-    'Large stone temples like Parthenon',
-    'IVC had no large stone temples. Their architecture featured baked bricks, drains, granaries, and the Great Bath.', 'MEDIUM', ['history', 'ivc']);
-
-  // ── UPSC: Indian Constitution ──────────────────────────────────────────────
-  await upsertQ('q-const-1', tConst.id, upscExam.id,
-    'The Indian Constitution came into force on:',
-    ['15 August 1947', '26 November 1949', '26 January 1950', '30 January 1948'],
-    '26 January 1950',
-    'Though adopted on 26 Nov 1949 (Constitution Day), it came into force on 26 January 1950 (Republic Day).', 'EASY', ['polity', 'constitution']);
-  await upsertQ('q-const-2', tConst.id, upscExam.id,
-    'Fundamental Rights are enshrined in which Part of the Indian Constitution?',
-    ['Part II', 'Part III', 'Part IV', 'Part IVA'], 'Part III',
-    'Articles 12–35 (Part III) deal with Fundamental Rights, enforceable by courts.', 'EASY', ['polity', 'fundamental-rights']);
-  await upsertQ('q-const-3', tConst.id, upscExam.id,
-    'Which Amendment is known as the "Mini-Constitution"?',
-    ['24th Amendment', '42nd Amendment', '44th Amendment', '86th Amendment'],
-    '42nd Amendment',
-    'The 42nd Amendment (1976) made sweeping changes to the Preamble, Fundamental Rights, DPSPs, and more — nicknamed the Mini-Constitution.', 'MEDIUM', ['polity', 'amendments']);
-  await upsertQ('q-const-4', tConst.id, upscExam.id,
-    'Directive Principles of State Policy are:',
-    ['Justiciable (enforceable by courts)', 'Non-justiciable but fundamental to governance', 'Superior to Fundamental Rights', 'Part of the Preamble'],
-    'Non-justiciable but fundamental to governance',
-    'DPSPs (Part IV) cannot be enforced by courts but are guidelines for framing laws and policies.', 'MEDIUM', ['polity', 'dpsp']);
-  await upsertQ('q-const-5', tConst.id, upscExam.id,
-    'Which article provides for the Right to Constitutional Remedies (called the "heart and soul" of the Constitution by Ambedkar)?',
-    ['Article 14', 'Article 19', 'Article 21', 'Article 32'],
-    'Article 32',
-    'Article 32 gives citizens the right to move the Supreme Court for enforcement of Fundamental Rights. Ambedkar called it the "most important article".', 'MEDIUM', ['polity', 'fundamental-rights']);
-
-  // ── MERN: React Hooks ─────────────────────────────────────────────────────
-  await upsertQ('q-usestate-1', tUseState.id, mernExam.id,
-    'What does useState return?',
-    ['Only the current state value', 'Only the setter function', 'An array with current state and a setter function', 'An object with state and setState'],
-    'An array with current state and a setter function',
-    'useState returns [state, setState] — destructured as const [value, setValue] = useState(initial).', 'EASY', ['react', 'hooks']);
-  await upsertQ('q-usestate-2', tUseState.id, mernExam.id,
-    'When should you use useReducer instead of useState?',
-    ['Always, as it is more performant', 'When state logic is complex or next state depends on previous state in non-trivial ways', 'When state is a string or number', 'Only in class components'],
-    'When state logic is complex or next state depends on previous state in non-trivial ways',
-    'useReducer is preferred for complex state logic, multiple sub-values, or when next state depends on the previous.', 'MEDIUM', ['react', 'useReducer']);
-  await upsertQ('q-usestate-3', tUseState.id, mernExam.id,
-    'What happens if you call setState with the same value as the current state?',
-    ['React always re-renders', 'React bails out of re-rendering (using Object.is comparison)', 'It throws an error', 'It resets to initial state'],
-    'React bails out of re-rendering (using Object.is comparison)',
-    'React uses Object.is to compare; if the value is the same, it skips re-rendering (bail out).', 'MEDIUM', ['react', 'performance']);
-  await upsertQ('q-usestate-4', tUseState.id, mernExam.id,
-    'What is the correct way to update state based on the previous state value?',
-    ['setState(state + 1)', 'setState(prev => prev + 1)', 'state++; setState(state)', 'setState(useState())'],
-    'setState(prev => prev + 1)',
-    'Using a functional update ensures you always work with the latest state, avoiding stale closure issues.', 'MEDIUM', ['react', 'hooks']);
-  await upsertQ('q-usestate-5', tUseState.id, mernExam.id,
-    'useReducer\'s dispatch function is:',
-    ['Asynchronous', 'Stable across re-renders (same reference)', 'Different on every render', 'Only available in class components'],
-    'Stable across re-renders (same reference)',
-    'dispatch (like setState) has a stable identity — React guarantees it won\'t change between renders.', 'HARD', ['react', 'useReducer']);
-
-  // ── MERN: Event Loop ──────────────────────────────────────────────────────
-  await upsertQ('q-evloop-1', tEventLoop.id, mernExam.id,
-    'Node.js achieves non-blocking I/O despite being single-threaded through:',
-    ['Multiple threads in the V8 engine', 'The event loop and libuv thread pool', 'Web Workers', 'Forking processes for each request'],
-    'The event loop and libuv thread pool',
-    'Libuv provides an async I/O abstraction; the event loop handles callbacks when operations complete.', 'MEDIUM', ['nodejs', 'event-loop']);
-  await upsertQ('q-evloop-2', tEventLoop.id, mernExam.id,
-    'Which runs first after the current synchronous code finishes: process.nextTick or Promise callbacks?',
-    ['Promise callbacks', 'process.nextTick', 'setTimeout with 0ms', 'setImmediate'],
-    'process.nextTick',
-    'process.nextTick callbacks run before Promises and before the event loop continues to next phase.', 'HARD', ['nodejs', 'event-loop', 'microtasks']);
-  await upsertQ('q-evloop-3', tEventLoop.id, mernExam.id,
-    'In which event loop phase do setTimeout callbacks execute?',
-    ['poll', 'check', 'timers', 'I/O callbacks'], 'timers',
-    'The timers phase executes callbacks scheduled by setTimeout and setInterval whose threshold has been reached.', 'MEDIUM', ['nodejs', 'event-loop']);
-  await upsertQ('q-evloop-4', tEventLoop.id, mernExam.id,
-    'setImmediate callbacks execute in which event loop phase?',
-    ['timers', 'check', 'poll', 'close'], 'check',
-    'setImmediate callbacks run in the check phase, after the poll phase.', 'MEDIUM', ['nodejs', 'event-loop']);
-  await upsertQ('q-evloop-5', tEventLoop.id, mernExam.id,
-    'What is the default size of the libuv thread pool?',
-    ['1', '4', '8', '16'], '4',
-    'libuv\'s default thread pool size is 4 (configurable via UV_THREADPOOL_SIZE env variable, max 1024).', 'HARD', ['nodejs', 'libuv']);
-
-  // Collect all questions for later use in test sessions
-  const allQuestions = await prisma.question.findMany({ select: { id: true, examId: true } });
-  const questionsByExam = {};
-  for (const q of allQuestions) {
-    if (!q.examId) continue;
-    if (!questionsByExam[q.examId]) questionsByExam[q.examId] = [];
-    questionsByExam[q.examId].push(q.id);
+  for (const q of questions) {
+    await prisma.question.upsert({ where: { id: q.id }, update: {}, create: q });
   }
-  console.log(`  ✓ ${allQuestions.length} questions`);
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  ACTIVITY DATA  (for all 50 students)
+  //  ACTIVITY: Streaks, study sessions, progress, test sessions
   // ══════════════════════════════════════════════════════════════════════════
-
-  const examIdMap = {
-    'exam-sde': sdeExam, 'exam-upsc': upscExam, 'exam-gate': gateExam, 'exam-mern': mernExam,
-  };
 
   const subjectsByExam = {
-    'exam-sde':  [sdeDsa, sdeSd, sdeBeh],
-    'exam-gate': [gateOs, gateDm, gateCn, gateDbms],
-    'exam-upsc': [upscGs1, upscGs2, upscCsat],
-    'exam-mern': [mernReact, mernNode, mernMongo, mernExpress],
+    'exam-sde':      [sdeDsa, sdeSd, sdeBeh],
+    'exam-frontend': [feCore, feReact, fePer],
+    'exam-backend':  [beApi, beDb, beSec],
+    'exam-ui':       [uiPrinc, uiResearch, uiTools],
+    'exam-devops':   [doContainers, doCicd, doCloud],
+  };
+
+  const topicsByExam = {
+    'exam-sde':      sdeTopics,
+    'exam-frontend': feTopics,
+    'exam-backend':  beTopics,
+    'exam-ui':       uiTopics,
+    'exam-devops':   doTopics,
+  };
+
+  const questionIdsByExam = {
+    'exam-sde':      ['q-sde-1','q-sde-2','q-sde-3','q-sde-4','q-sde-5','q-sde-6','q-sde-7','q-sde-8','q-sde-9','q-sde-10'],
+    'exam-frontend': ['q-fe-1','q-fe-2','q-fe-3','q-fe-4','q-fe-5','q-fe-6','q-fe-7','q-fe-8','q-fe-9','q-fe-10'],
+    'exam-backend':  ['q-be-1','q-be-2','q-be-3','q-be-4','q-be-5','q-be-6','q-be-7','q-be-8','q-be-9','q-be-10'],
+    'exam-ui':       ['q-ui-1','q-ui-2','q-ui-3','q-ui-4','q-ui-5','q-ui-6','q-ui-7','q-ui-8'],
+    'exam-devops':   ['q-do-1','q-do-2','q-do-3','q-do-4','q-do-5','q-do-6','q-do-7','q-do-8','q-do-9','q-do-10'],
   };
 
   for (const student of students) {
-    const targetExamId = student.targetExam ?? 'exam-sde';
-    const exam         = examIdMap[targetExamId] ?? sdeExam;
-    const subjects     = subjectsByExam[targetExamId] ?? [sdeDsa];
-    const examQIds     = questionsByExam[exam.id] ?? [];
+    const examId   = student.targetExam ?? 'exam-sde';
+    const subjects = subjectsByExam[examId] ?? subjectsByExam['exam-sde'];
+    const topics   = topicsByExam[examId]   ?? topicsByExam['exam-sde'];
+    const qIds     = questionIdsByExam[examId] ?? questionIdsByExam['exam-sde'];
 
-    // ── Streak ───────────────────────────────────────────────────────────────
-    const currStreak = rand(0, 30);
+    // ── Streak (lastActiveDate = past date based on student config) ──────
+    const lastActive    = daysAgo(student.lastActiveDaysAgo);
+    const streakLength  = rand(1, 30);
     await prisma.streak.upsert({
       where:  { userId: student.id },
-      update: { currentStreak: currStreak, longestStreak: Math.max(currStreak, rand(currStreak, 45)), lastActiveDate: daysAgo(rand(0, 2)) },
-      create: { userId: student.id, currentStreak: currStreak, longestStreak: Math.max(currStreak, rand(currStreak, 45)), lastActiveDate: daysAgo(rand(0, 2)) },
+      update: { currentStreak: streakLength, longestStreak: streakLength + rand(0,10), lastActiveDate: lastActive },
+      create: { userId: student.id, currentStreak: streakLength, longestStreak: streakLength + rand(0,10), lastActiveDate: lastActive },
     });
 
-    // ── Study Sessions (last 30 days) ─────────────────────────────────────────
-    const numStudySessions = rand(5, 20);
-    const usedDays = new Set();
-    for (let s = 0; s < numStudySessions; s++) {
-      let day = rand(0, 29);
-      while (usedDays.has(day)) day = rand(0, 29);
-      usedDays.add(day);
+    // ── Study sessions spread across past 30 days ────────────────────────
+    const sessionCount = rand(4, 12);
+    for (let i = 0; i < sessionCount; i++) {
       await prisma.studySession.create({
         data: {
           userId:      student.id,
           subjectId:   pick(subjects).id,
-          date:        daysAgo(day),
+          date:        randPast(1, 30),
           durationMins: rand(20, 120),
         },
       });
     }
 
-    // ── User Progress ─────────────────────────────────────────────────────────
-    const shuffledTopics = shuffle(allTopics);
-    const numTopics = rand(3, allTopics.length);
-    const statuses = ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'];
-    for (let t = 0; t < numTopics; t++) {
-      const topic = shuffledTopics[t];
+    // ── UserProgress ─────────────────────────────────────────────────────
+    const shuffled       = shuffle(topics);
+    const completedCount = rand(1, Math.min(4, shuffled.length));
+    for (let i = 0; i < shuffled.length; i++) {
+      const status = i < completedCount ? 'COMPLETED'
+                   : i < completedCount + 2 ? 'IN_PROGRESS'
+                   : 'NOT_STARTED';
       await prisma.userProgress.upsert({
-        where:  { userId_topicId: { userId: student.id, topicId: topic.id } },
-        update: {},
-        create: { userId: student.id, topicId: topic.id, status: pick(statuses) },
+        where:  { userId_topicId: { userId: student.id, topicId: shuffled[i].id } },
+        update: { status, updatedAt: randPast(1, 20) },
+        create: { userId: student.id, topicId: shuffled[i].id, status, updatedAt: randPast(1, 20) },
       });
     }
 
-    // ── Test Sessions (2–5 completed sessions) ────────────────────────────────
-    const numTests = rand(2, 5);
-    for (let t = 0; t < numTests; t++) {
-      if (examQIds.length < 3) continue;
-      const sessionQIds = shuffle(examQIds).slice(0, rand(3, Math.min(10, examQIds.length)));
-      const submittedAt = daysAgo(rand(1, 25));
-      const timeTakenSecs = rand(300, 1800);
+    // ── One completed test session ────────────────────────────────────────
+    const shuffledQ = shuffle(qIds);
+    const testQIds  = shuffledQ.slice(0, Math.min(5, shuffledQ.length));
+    const qs        = await prisma.question.findMany({ where: { id: { in: testQIds } }, select: { id: true, answer: true } });
+    const score     = rand(40, 100);
+    const startedAt = randPast(2, 14);
+    const submitted = new Date(startedAt.getTime() + rand(300, 1800) * 1000);
 
-      const session = await prisma.testSession.create({
-        data: {
-          userId:         student.id,
-          examId:         exam.id,
-          status:         'COMPLETED',
-          totalQuestions: sessionQIds.length,
-          questionIds:    sessionQIds,
-          startedAt:      new Date(submittedAt.getTime() - timeTakenSecs * 1000),
-          submittedAt,
-          timeTakenSecs,
-          score:          0, // will compute after answers
-        },
+    const ts = await prisma.testSession.create({
+      data: {
+        userId: student.id, examId,
+        totalQuestions: testQIds.length, questionIds: testQIds,
+        status: 'COMPLETED', score,
+        startedAt, submittedAt: submitted,
+        timeTakenSecs: rand(300, 1800),
+      },
+    });
+
+    for (const q of qs) {
+      const correct = Math.random() < score / 100;
+      const answer  = correct ? q.answer : pick(['A','B','C','D'].filter(x => x !== q.answer));
+      await prisma.testAnswer.create({
+        data: { sessionId: ts.id, questionId: q.id, selectedAnswer: answer, isCorrect: correct },
       });
-
-      // Test Answers
-      let correct = 0;
-      const allQDetails = await prisma.question.findMany({
-        where: { id: { in: sessionQIds } },
-        select: { id: true, answer: true, options: true },
-      });
-
-      for (const q of allQDetails) {
-        const opts = Array.isArray(q.options) ? q.options : [q.answer];
-        const wrongOpts = opts.filter(o => o !== q.answer);
-        const isCorrect = Math.random() > 0.45 || wrongOpts.length === 0; // ~55% correct rate
-        const selected = isCorrect ? q.answer : pick(wrongOpts);
-        if (isCorrect) correct++;
-
-        await prisma.testAnswer.upsert({
-          where:  { sessionId_questionId: { sessionId: session.id, questionId: q.id } },
-          update: {},
-          create: { sessionId: session.id, questionId: q.id, selectedAnswer: selected, isCorrect, timeTakenSecs: rand(15, 120) },
-        });
-      }
-
-      const score = Math.round((correct / sessionQIds.length) * 100);
-      await prisma.testSession.update({ where: { id: session.id }, data: { score } });
-    }
-
-    // ── AI Conversations (random, some students) ──────────────────────────────
-    if (Math.random() > 0.4) {
-      const convTopicId = pick(allTopics).id;
-      const pairs = [
-        ['Explain this topic in simple terms', `Sure! ${pick(allTopics).title} is a fundamental concept. Let me break it down...`],
-        ['What are common interview questions here?', 'Great question! Common interview questions include complexity analysis, edge cases, and real-world applications...'],
-        ['Give me a practice problem', 'Here\'s a problem to test your understanding: Given a sorted array, find the target using the most efficient approach possible...'],
-      ];
-      for (const [userMsg, aiMsg] of pairs.slice(0, rand(1, 3))) {
-        await prisma.aiConversation.create({ data: { userId: student.id, topicId: convTopicId, role: 'USER',      message: userMsg } });
-        await prisma.aiConversation.create({ data: { userId: student.id, topicId: convTopicId, role: 'ASSISTANT', message: aiMsg  } });
-      }
-    }
-
-    // ── AI Suggestions ────────────────────────────────────────────────────────
-    if (Math.random() > 0.3) {
-      const expiry = new Date(); expiry.setDate(expiry.getDate() + 7);
-      await prisma.aiSuggestion.create({
-        data: {
-          userId:  student.id,
-          examId:  exam.id,
-          suggestions: [
-            { topic: 'Dynamic Programming', priority: 'high',   reason: 'Frequently tested in interviews' },
-            { topic: 'System Design',       priority: 'medium', reason: 'Important for senior roles' },
-            { topic: 'Graph Algorithms',    priority: 'high',   reason: 'Appears in 60% of FAANG rounds' },
-          ],
-          expiresAt: expiry,
-        },
-      });
-    }
-
-    // ── AI Study Plan (some students) ─────────────────────────────────────────
-    if (Math.random() > 0.6 && student.examDate) {
-      await prisma.aiStudyPlan.create({
-        data: {
-          userId:      student.id,
-          examId:      exam.id,
-          examDate:    student.examDate,
-          hoursPerDay: student.hoursPerDay ?? 3,
-          plan: {
-            phases: [
-              { week: 1, focus: 'Arrays, Strings, Basic DP',   topics: ['Two Pointers', 'Sliding Window', 'Prefix Sum'] },
-              { week: 2, focus: 'Trees, Graphs, Advanced DP',  topics: ['BST', 'DFS & BFS', 'DP Foundations']           },
-              { week: 3, focus: 'System Design & Behavioral',  topics: ['Load Balancing', 'Caching', 'STAR method']      },
-              { week: 4, focus: 'Mock Tests & Revision',       topics: ['Full mock tests', 'Weak area review']           },
-            ],
-          },
-        },
-      });
-    }
-
-    // ── AI Saved Questions (some students) ────────────────────────────────────
-    if (Math.random() > 0.5) {
-      const numSaved = rand(1, 4);
-      for (let sq = 0; sq < numSaved; sq++) {
-        const t = pick(allTopics);
-        await prisma.aiSavedQuestion.create({
-          data: {
-            userId:     student.id,
-            topicId:    t.id,
-            question:   `AI-generated: What is the time complexity of the optimal solution for a classic ${t.title} problem?`,
-            options:    ['O(n)', 'O(n log n)', 'O(n²)', 'O(log n)'],
-            answer:     pick(['O(n)', 'O(n log n)', 'O(log n)']),
-            explanation: `For ${t.title}, the optimal approach typically leverages the problem structure to achieve this complexity.`,
-            difficulty: pick(['EASY', 'MEDIUM', 'HARD']),
-          },
-        });
-      }
     }
   }
 
-  // ── Fixed users (alice, bob, charlie) get rich streaks for demo ───────────
-  for (const [email, curr, best] of [
-    ['alice@example.com', 14, 21],
-    ['bob@example.com',   22, 30],
-    ['charlie@example.com', 5, 12],
-  ]) {
-    const u = students.find(s => s.email === email);
-    if (u) await prisma.streak.update({ where: { userId: u.id }, data: { currentStreak: curr, longestStreak: best } });
-  }
-
-  const [sessions, studySess, progress, convos, suggestions, plans, saved] = await Promise.all([
-    prisma.testSession.count(),
-    prisma.studySession.count(),
-    prisma.userProgress.count(),
-    prisma.aiConversation.count(),
-    prisma.aiSuggestion.count(),
-    prisma.aiStudyPlan.count(),
-    prisma.aiSavedQuestion.count(),
-  ]);
-
-  console.log(`  ✓ ${sessions} test sessions, ${studySess} study sessions`);
-  console.log(`  ✓ ${progress} user progress records`);
-  console.log(`  ✓ ${convos} AI conversations, ${suggestions} suggestions, ${plans} study plans, ${saved} saved questions`);
-  console.log('✅ Seed complete!');
-  console.log('\n📋 Login credentials:');
-  console.log('  Admin:   admin@examprep.com  / Admin@123');
-  console.log('  Student: alice@example.com   / Student@123');
-  console.log('  Student: bob@example.com     / Student@123');
-  console.log('  (all 50 students use Student@123)');
+  console.log(`✅ Seed complete — 1 admin + ${students.length} students, 5 exams`);
+  console.log('   Admin:   admin@examprep.com / Admin@123');
+  console.log('   Student: alice@example.com  / Student@123');
 }
 
 main()

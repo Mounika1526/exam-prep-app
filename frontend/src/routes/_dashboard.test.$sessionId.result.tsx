@@ -13,7 +13,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { chartTheme, DIFF_COLORS } from '@/lib/highchartsTheme'
 import {
   CheckCircle2, XCircle, MinusCircle, Clock, Target,
-  ArrowLeft, RotateCcw, AlertCircle, ChevronDown,
+  ArrowLeft, RotateCcw, AlertCircle, ChevronDown, TrendingDown,
 } from 'lucide-react'
 import { formatSeconds } from '@/lib/utils'
 
@@ -308,6 +308,16 @@ function TestResultPage() {
     retry: false,
   })
 
+  const { data: weakTopics } = useQuery<Array<{
+    id: string; title: string; accuracy: number; correct: number; total: number;
+    estimatedMins?: number; chapter: { title: string; subject: { title: string } }
+  }>>({
+    queryKey: ['weak-areas'],
+    queryFn: () => api.get('/progress/weak-areas').then(r => r.data.data),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!result,
+  })
+
   if (isLoading) {
     return (
       <div className="max-w-3xl mx-auto space-y-4">
@@ -499,6 +509,54 @@ function TestResultPage() {
                   <span className="h-2.5 w-2.5 rounded-sm inline-block" style={{ backgroundColor: d.fill }} />
                   {d.name}: {d.accuracy}%
                 </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Weak topics ── */}
+      {weakTopics && weakTopics.length > 0 && (
+        <Card className="glass-card border-0" style={{ borderRadius: 20 }}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2" style={{ color: '#F2F2F0' }}>
+              <TrendingDown className="h-4 w-4" style={{ color: '#F87171' }} />
+              Topics to Review
+            </CardTitle>
+            <p className="text-xs mt-0.5" style={{ color: '#8B8FA8' }}>
+              Based on your overall test history — below 50% accuracy
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {weakTopics.slice(0, 5).map(t => (
+                <Link key={t.id} to="/study/$topicId" params={{ topicId: t.id }}>
+                  <div
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
+                    style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)', cursor: 'pointer' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.12)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.06)' }}
+                  >
+                    <div
+                      className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold"
+                      style={{ background: 'rgba(248,113,113,0.15)', color: '#F87171' }}
+                    >
+                      {t.accuracy}%
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate" style={{ color: '#F2F2F0' }}>{t.title}</p>
+                      <p className="text-xs truncate" style={{ color: '#8B8FA8' }}>
+                        {t.chapter.subject.title} › {t.chapter.title}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-semibold" style={{ color: '#F87171' }}>
+                        {t.correct}/{t.total}
+                      </p>
+                      <p className="text-[10px]" style={{ color: '#8B8FA8' }}>correct</p>
+                    </div>
+                  </div>
+                </Link>
               ))}
             </div>
           </CardContent>

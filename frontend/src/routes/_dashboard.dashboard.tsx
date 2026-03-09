@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { OnboardingModal, useOnboarding } from '@/components/ui/OnboardingModal'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
 import { StatsCard } from '@/components/dashboard/StatsCard'
@@ -12,6 +13,7 @@ import { ContinueStudyingCard } from '@/components/dashboard/ContinueStudyingCar
 import { RecentTestResults } from '@/components/dashboard/RecentTestResults'
 import { EnrolledExamsSection } from '@/components/dashboard/EnrolledExamsSection'
 import { WelcomeBackBanner } from '@/components/dashboard/WelcomeBackBanner'
+import { DailyGoalCard } from '@/components/dashboard/DailyGoalCard'
 import { AiTrendingWidget } from '@/components/ai/AiTrendingWidget'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BookOpen, Clock, Trophy, Target, Flame } from 'lucide-react'
@@ -47,6 +49,7 @@ const statsGridVariants = {
 
 function DashboardPage() {
   const { user } = useAuthStore()
+  const { open: onboardingOpen, dismiss: dismissOnboarding } = useOnboarding()
 
   const { data: s, isLoading } = useQuery<DashboardStats>({
     queryKey: ['dashboard-stats'],
@@ -57,6 +60,11 @@ function DashboardPage() {
 
   return (
     <div className="space-y-6">
+
+      {/* ── Onboarding modal (first visit only) ── */}
+      <AnimatePresence>
+        {onboardingOpen && <OnboardingModal onClose={dismissOnboarding} />}
+      </AnimatePresence>
 
       {/* ── Welcome back banner (first visit of the day) ── */}
       <WelcomeBackBanner streak={s?.streak} userName={user?.name} />
@@ -186,10 +194,13 @@ function DashboardPage() {
         <ProgressHeatmap />
       </div>
 
-      {/* ── Row 6: Streak card + Recent study activity ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* ── Row 6: Streak card + Daily goal + Recent study activity ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
           <StreakCard streak={s?.streak} />
+        </div>
+        <div className="lg:col-span-1">
+          <DailyGoalCard sessions={s?.recentStudySessions ?? []} hoursPerDay={user?.hoursPerDay} />
         </div>
         <div className="lg:col-span-2">
           <RecentActivity sessions={s?.recentStudySessions ?? []} />

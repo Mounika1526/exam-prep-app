@@ -16,7 +16,8 @@ export default {
     extend: {
       fontFamily: {
         // "Dark academic meets futuristic study lab" typography
-        playfair: ['"Playfair Display"', 'Georgia', 'serif'],
+        sans:      ['"DM Sans"', 'system-ui', 'sans-serif'],   // default body font
+        playfair:  ['"Playfair Display"', 'Georgia', 'serif'],
         'dm-sans': ['"DM Sans"', 'system-ui', 'sans-serif'],
       },
       colors: {
