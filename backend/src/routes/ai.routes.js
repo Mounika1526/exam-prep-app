@@ -11,6 +11,7 @@ import {
   getSavedQuestions,
   generateStudyPlan,
   getStudyPlan,
+  getAllStudyPlans,
   getSuggestions,
   getTrending,
   voiceSession,
@@ -40,6 +41,7 @@ router.delete('/saved-questions/:id',  deleteSavedQuestion);
 
 // ─── Study Plan ───────────────────────────────────────────────────────────────
 router.post('/study-plan',             generateStudyPlan);
+router.get('/study-plans',             getAllStudyPlans);
 router.get('/study-plan/:examId',      getStudyPlan);
 
 // ─── Suggestions & Trending ───────────────────────────────────────────────────

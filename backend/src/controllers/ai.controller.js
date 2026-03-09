@@ -182,13 +182,19 @@ export const generateQuestions = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Topic not found' });
     }
 
-    const questions = await geminiGenerateQuestions(
+    const raw = await geminiGenerateQuestions(
       topic.title,
       topic.chapter?.subject?.title,
       topic.chapter?.subject?.exam?.title,
       parseInt(count),
       difficulty,
     );
+
+    // Normalize: AI returns `correctAnswer`, frontend expects `answer`
+    const questions = raw.map(q => ({
+      ...q,
+      answer: q.answer ?? q.correctAnswer,
+    }));
 
     res.json({ questions });
   } catch (err) { next(err); }
@@ -326,6 +332,21 @@ export const generateStudyPlan = async (req, res, next) => {
     });
 
     res.json(saved);
+  } catch (err) { next(err); }
+};
+
+/**
+ * GET /api/ai/study-plans
+ * Returns all saved study plans for the current user.
+ */
+export const getAllStudyPlans = async (req, res, next) => {
+  try {
+    const plans = await prisma.aiStudyPlan.findMany({
+      where: { userId: req.user.id },
+      orderBy: { generatedAt: 'desc' },
+      select: { id: true, examId: true, examDate: true, hoursPerDay: true, generatedAt: true, plan: true },
+    });
+    res.json({ success: true, data: plans });
   } catch (err) { next(err); }
 };
 

@@ -39,6 +39,14 @@ export const errorHandler = (err, _req, res, _next) => {
     return res.status(401).json({ success: false, message: 'Token expired.' });
   }
 
+  // ─── Gemini / Google AI quota errors ─────────────────────────────────────
+  if (err.message?.includes('429') || err.message?.includes('Too Many Requests') || err.message?.includes('quota')) {
+    return res.status(429).json({
+      success: false,
+      message: 'AI service quota exceeded. Please try again later.',
+    });
+  }
+
   // ─── Default ──────────────────────────────────────────────────────────────
   const status = err.status || err.statusCode || 500;
   const message =

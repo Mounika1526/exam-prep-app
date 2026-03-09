@@ -1,23 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const MODEL_ID = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const MODEL_ID = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
-// ─── Model ───────────────────────────────────────────────────────────────────
-
-/**
- * Returns a Gemini model instance (gemini-2.0-flash).
- */
 export function initModel() {
   return genAI.getGenerativeModel({ model: MODEL_ID });
 }
-
-// ─── System Prompt ───────────────────────────────────────────────────────────
-
-/**
- * Builds a grounded system prompt from the current study context.
- * @param {{ examTitle?, subjectTitle?, chapterTitle?, topicTitle?, studentName?, difficulty? }} context
- */
 export function buildSystemPrompt(context = {}) {
   const { examTitle, subjectTitle, chapterTitle, topicTitle, studentName, difficulty } = context;
 
@@ -42,16 +30,6 @@ export function buildSystemPrompt(context = {}) {
   return prompt;
 }
 
-// ─── Chat ─────────────────────────────────────────────────────────────────────
-
-/**
- * Sends a conversation to Gemini and returns the assistant reply text.
- *
- * @param {Array<{ role: 'USER' | 'ASSISTANT', message: string }>} messages
- *   Full conversation including the new user message as the last entry.
- * @param {object} context  Passed to buildSystemPrompt.
- * @returns {Promise<string>}
- */
 export async function chat(messages, context = {}) {
   const model = initModel();
   const systemPrompt = buildSystemPrompt(context);
@@ -74,18 +52,6 @@ export async function chat(messages, context = {}) {
   return result.response.text();
 }
 
-// ─── Question Generation ──────────────────────────────────────────────────────
-
-/**
- * Generates MCQ questions for a topic and returns them as a structured JSON array.
- *
- * @param {string}  topicTitle
- * @param {string}  subject    Subject title (for grounding)
- * @param {string}  exam       Exam title (for grounding)
- * @param {number}  count
- * @param {string}  difficulty  'EASY' | 'MEDIUM' | 'HARD'
- * @returns {Promise<Array>}
- */
 export async function generateQuestions(topicTitle, subject, exam, count, difficulty) {
   const model = initModel();
 
@@ -114,17 +80,6 @@ Return ONLY a JSON array, no markdown:
   }
 }
 
-// ─── Study Plan ───────────────────────────────────────────────────────────────
-
-/**
- * Generates a day-by-day study plan as a JSON object.
- *
- * @param {string|Date} examDate
- * @param {number}      hoursPerDay
- * @param {Array<{ name: string, chapters?: string[] }>} subjects
- * @param {string[]}    weakAreas   Topic/subject titles the student struggles with
- * @returns {Promise<object>}
- */
 export async function generateStudyPlan(examDate, hoursPerDay, subjects, weakAreas = []) {
   const model = initModel();
 
@@ -133,18 +88,16 @@ export async function generateStudyPlan(examDate, hoursPerDay, subjects, weakAre
     Math.ceil((new Date(examDate) - Date.now()) / (1000 * 60 * 60 * 24)),
   );
 
-  const prompt = `Create a detailed day-by-day study plan.
+  const subjectNames = subjects.map(s => s.name || s).join(', ');
 
-Details:
-- Days until exam: ${daysLeft}
-- Hours available per day: ${hoursPerDay}
-- Total study hours: ${daysLeft * hoursPerDay}
-- Subjects: ${JSON.stringify(subjects)}
-${weakAreas.length ? `- Areas needing extra focus: ${weakAreas.join(', ')}` : ''}
+  const prompt = `Create a concise study plan.
+- Days: ${daysLeft}, Hours/day: ${hoursPerDay}
+- Subjects: ${subjectNames}
+${weakAreas.length ? `- Focus areas: ${weakAreas.join(', ')}` : ''}
 
-Return ONLY a JSON object, no markdown:
+Return ONLY this JSON, no markdown, keep values brief:
 {
-  "overview": "Brief plan summary",
+  "overview": "2-sentence summary",
   "totalDays": ${daysLeft},
   "hoursPerDay": ${hoursPerDay},
   "phases": [
@@ -152,21 +105,13 @@ Return ONLY a JSON object, no markdown:
       "name": "Phase name",
       "startDay": 1,
       "endDay": 7,
-      "goal": "What to achieve",
+      "goal": "One sentence goal",
       "subjects": [
-        { "name": "Subject", "dailyHours": 2, "topics": ["Topic 1", "Topic 2"] }
+        { "name": "Subject", "dailyHours": 2, "chapters": ["Topic 1", "Topic 2"] }
       ]
     }
   ],
-  "dailySchedule": {
-    "morning": "...",
-    "afternoon": "...",
-    "evening": "..."
-  },
-  "weeklyMilestones": [
-    { "week": 1, "goal": "Complete foundation topics" }
-  ],
-  "tips": ["Study tip 1", "Study tip 2"]
+  "tips": ["Tip 1", "Tip 2", "Tip 3"]
 }`;
 
   const result = await model.generateContent(prompt);
@@ -179,15 +124,6 @@ Return ONLY a JSON object, no markdown:
   }
 }
 
-// ─── Trending Suggestions ─────────────────────────────────────────────────────
-
-/**
- * Returns trending skills, technologies, or topics relevant to an exam.
- *
- * @param {string} examTitle
- * @param {string} category  Exam category (e.g. "Programming", "Networking")
- * @returns {Promise<Array>}
- */
 export async function getTrendingSuggestions(examTitle, category) {
   const model = initModel();
 

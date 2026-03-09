@@ -13,7 +13,7 @@ function AiTutorPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1
+        {/* <h1
           className="text-2xl font-bold"
           style={{
             fontFamily: '"Playfair Display", Georgia, serif',
@@ -22,7 +22,7 @@ function AiTutorPage() {
           }}
         >
           AI Assistant
-        </h1>
+        </h1> */}
         <p className="text-sm mt-1" style={{ color: '#8B8FA8' }}>
           Chat, plan, and practice with AI
         </p>

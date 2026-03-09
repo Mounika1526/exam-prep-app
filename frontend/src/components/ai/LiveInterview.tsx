@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -139,7 +140,10 @@ export function LiveInterview() {
                     <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
                       msg.role === 'USER' ? 'bg-primary text-primary-foreground' : 'bg-muted'
                     }`}>
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                      {msg.role === 'USER'
+                        ? <p className="whitespace-pre-wrap">{msg.text}</p>
+                        : <div className="prose prose-sm dark:prose-invert max-w-none"><ReactMarkdown>{msg.text}</ReactMarkdown></div>
+                      }
                       <p className="text-xs opacity-60 mt-1">
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>

@@ -1,15 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Loader2, Send, Bot, User, Trash2, Sparkles } from 'lucide-react'
+import { Loader2, Send, Bot, Trash2, Sparkles } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import type { AiConversation } from '@/types'
+import ReactMarkdown from 'react-markdown'
 
 interface Props {
   topicId?: string
@@ -137,7 +136,10 @@ export function AiTutor({ topicId, topicTitle }: Props) {
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted'
                 }`}>
-                  <p className="whitespace-pre-wrap">{msg.message}</p>
+                  {msg.role === 'USER'
+                    ? <p className="whitespace-pre-wrap">{msg.message}</p>
+                    : <div className="prose prose-sm dark:prose-invert max-w-none"><ReactMarkdown>{msg.message}</ReactMarkdown></div>
+                  }
                 </div>
               </div>
             ))}
