@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Sparkles, Loader2, CalendarDays, Printer, RotateCcw } from 'lucide-react'
+import { Sparkles, Loader2, CalendarDays, Printer, RotateCcw, BookMarked, ExternalLink } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export const Route = createFileRoute('/_dashboard/study-plan')({
@@ -25,6 +25,12 @@ interface Phase {
   focus?: string
 }
 
+interface PlanReference {
+  title: string
+  type: string
+  url?: string
+}
+
 interface StudyPlanData {
   id: string
   plan: {
@@ -32,6 +38,8 @@ interface StudyPlanData {
     weeks?: Phase[]
     totalWeeks?: number
     dailyHours?: number
+    tips?: string[]
+    references?: PlanReference[]
   }
   examDate: string
   hoursPerDay: number
@@ -238,22 +246,19 @@ function StudyPlanPage() {
 
             {/* Hours */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium" style={{ color: '#F2F2F0' }}>
-                Hours per Day{' '}
-                <span style={{ color: '#00E5CC', fontWeight: 700 }}>{hours}h</span>
-              </label>
-              <input
-                type="range"
-                min={1}
-                max={12}
-                value={hours}
-                onChange={e => setHours(Number(e.target.value))}
-                className="w-full h-2 rounded-lg cursor-pointer"
-                style={{ accentColor: '#00E5CC' }}
-              />
-              <div className="flex justify-between text-xs" style={{ color: '#8B8FA8' }}>
-                <span>1h</span><span>12h</span>
-              </div>
+              <label className="text-sm font-medium" style={{ color: '#F2F2F0' }}>Hours per Day</label>
+              <Select value={String(hours)} onValueChange={v => setHours(Number(v))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["1", "2", "3", "4", "5", "6", "7", "8", "10", "12"].map(h => (
+                    <SelectItem key={h} value={h}>
+                      {h} {h === "1" ? "hour" : "hours"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -316,6 +321,53 @@ function StudyPlanPage() {
                 <PhaseCard key={i} phase={phase} idx={i} planId={plan.id} />
               ))}
             </div>
+          )}
+
+          {/* References */}
+          {plan.plan.references && plan.plan.references.length > 0 && (
+            <Card className="glass-card border-0" style={{ borderRadius: 12 }}>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: '#F2F2F0' }}>
+                  <BookMarked className="h-4 w-4" style={{ color: '#A78BFA' }} />
+                  Recommended Resources
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-2">
+                {plan.plan.references.map((ref, i) => (
+                  <div key={i} className="flex items-start gap-2.5 text-sm">
+                    <span
+                      className="text-xs font-medium px-1.5 py-0.5 rounded shrink-0 mt-0.5"
+                      style={{
+                        background: ref.type === 'book' ? 'rgba(167,139,250,0.15)' :
+                                    ref.type === 'video' ? 'rgba(248,113,113,0.15)' :
+                                    ref.type === 'website' ? 'rgba(0,229,204,0.12)' :
+                                    'rgba(245,166,35,0.15)',
+                        color: ref.type === 'book' ? '#A78BFA' :
+                               ref.type === 'video' ? '#F87171' :
+                               ref.type === 'website' ? '#00E5CC' :
+                               '#F5A623',
+                      }}
+                    >
+                      {ref.type}
+                    </span>
+                    {ref.url ? (
+                      <a
+                        href={ref.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline inline-flex items-center gap-1"
+                        style={{ color: '#00E5CC' }}
+                      >
+                        {ref.title}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    ) : (
+                      <span style={{ color: '#8B8FA8' }}>{ref.title}</span>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           )}
         </div>
       )}

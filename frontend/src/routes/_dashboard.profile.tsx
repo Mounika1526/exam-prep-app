@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
@@ -22,7 +23,7 @@ const profileSchema = z.object({
   name: z.string().min(2),
   targetExam: z.string().optional(),
   examDate: z.string().optional(),
-  hoursPerDay: z.number().min(0.5).max(24).optional(),
+  hoursPerDay: z.number().min(1).max(12).optional(),
 })
 
 const passwordSchema = z.object({
@@ -36,7 +37,7 @@ function ProfilePage() {
   const { toast } = useToast()
   const qc = useQueryClient()
 
-  const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof profileSchema>>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user?.name || '',
@@ -134,7 +135,21 @@ function ProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label style={{ color: '#F2F2F0' }}>Hours per Day</Label>
-                <Input type="number" step="0.5" {...register('hoursPerDay', { valueAsNumber: true })} />
+                <Select
+                  value={String(watch('hoursPerDay') ?? 4)}
+                  onValueChange={v => setValue('hoursPerDay', Number(v), { shouldDirty: true })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["1", "2", "3", "4", "5", "6", "7", "8", "10", "12"].map(h => (
+                      <SelectItem key={h} value={h}>
+                        {h} {h === "1" ? "hour" : "hours"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <Button

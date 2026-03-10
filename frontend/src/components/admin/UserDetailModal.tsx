@@ -8,8 +8,67 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import {
   User, Mail, Target, Calendar, Trophy, BookOpen,
-  MessageSquare, Bookmark, Flame, Clock,
+  MessageSquare, Bookmark, Flame, Clock, TrendingUp,
 } from 'lucide-react'
+import type { AdminUserDetail } from '@/types'
+
+// ─── Candidate summary ────────────────────────────────────────────────────────
+
+function computeCandidateSummary(user: AdminUserDetail): string {
+  const parts: string[] = []
+
+  const lastActive = user.lastActive ? new Date(user.lastActive) : null
+  const daysSince = lastActive
+    ? Math.floor((Date.now() - lastActive.getTime()) / 86400000)
+    : null
+
+  if (daysSince === null) {
+    parts.push('Never logged in.')
+  } else if (daysSince === 0) {
+    parts.push('Active today.')
+  } else if (daysSince <= 3) {
+    parts.push(`Active ${daysSince === 1 ? 'yesterday' : `${daysSince} days ago`}.`)
+  } else if (daysSince <= 14) {
+    parts.push(`Last seen ${daysSince} days ago.`)
+  } else {
+    parts.push(`Inactive — last seen ${daysSince} days ago.`)
+  }
+
+  if (user.targetExam) {
+    parts.push(`Targeting ${user.targetExam}${user.examDate ? ` (exam ${fmt(user.examDate)})` : ''}.`)
+  }
+
+  const topicCount = user._count.userProgress
+  const completed = user.userProgress.filter((p) => p.status === 'COMPLETED').length
+  if (topicCount > 0) {
+    const pct = Math.round((completed / topicCount) * 100)
+    parts.push(`${completed}/${topicCount} topics completed (${pct}%).`)
+  } else {
+    parts.push('No topics started yet.')
+  }
+
+  const tests = user.testSessions
+  if (tests.length > 0) {
+    const scored = tests.filter((t) => t.score !== null)
+    if (scored.length) {
+      const avg = Math.round(scored.reduce((s, t) => s + (t.score ?? 0), 0) / scored.length)
+      const level = avg >= 70 ? 'strong' : avg >= 50 ? 'moderate' : 'needs improvement'
+      parts.push(`${tests.length} test${tests.length > 1 ? 's' : ''} taken, avg ${avg}% (${level}).`)
+    } else {
+      parts.push(`${tests.length} test session${tests.length > 1 ? 's' : ''} in progress.`)
+    }
+  }
+
+  if (user.streak && user.streak.currentStreak > 1) {
+    parts.push(`On a ${user.streak.currentStreak}-day study streak.`)
+  }
+
+  if (user._count.aiConversations > 10) {
+    parts.push('High AI tutor engagement.')
+  }
+
+  return parts.join(' ')
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -113,6 +172,14 @@ export function UserDetailModal({ userId, onClose }: Props) {
 
               {/* ── Overview ── */}
               <TabsContent value="overview" className="mt-4 space-y-4">
+                {/* Candidate summary */}
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/40 border border-border/50">
+                  <TrendingUp className="h-4 w-4 mt-0.5 shrink-0 text-cyan-500" />
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {computeCandidateSummary(user)}
+                  </p>
+                </div>
+
                 {/* Info grid */}
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   {[

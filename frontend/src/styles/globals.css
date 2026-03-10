@@ -424,6 +424,17 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
+.light .ds-sidebar,
+:root:not(.dark) .ds-sidebar {
+  background: rgba(255, 255, 255, 0.98);
+  border-right-color: rgba(0, 0, 0, 0.08);
+}
+.light .ds-nav-item:hover:not(.ds-nav-active),
+:root:not(.dark) .ds-nav-item:hover:not(.ds-nav-active) {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-left-color: rgba(0, 0, 0, 0.15) !important;
+  transform: translateX(2px);
+}
 
 /* Active nav item glow */
 .ds-nav-active {
@@ -450,6 +461,18 @@
   backdrop-filter: blur(20px) saturate(1.2);
   -webkit-backdrop-filter: blur(20px) saturate(1.2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+.light .ds-header,
+:root:not(.dark) .ds-header {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ── Header search button — light mode fix ── */
+.light .ds-header-search,
+:root:not(.dark) .ds-header-search {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
 }
 
 /* ── Search modal ── */

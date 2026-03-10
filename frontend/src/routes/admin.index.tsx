@@ -45,11 +45,11 @@ function KpiCard({ title, value, suffix, subtitle, icon: Icon, iconColor, iconBg
       <CardContent className="pt-5">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <p className="text-xs font-medium" style={{ color: '#8B8FA8' }}>{title}</p>
-            <p className="text-2xl font-bold" style={{ color: '#F2F2F0' }}>
+            <p className="text-xs font-medium text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold text-foreground">
               <CountUp end={value} duration={1.4} separator="," decimals={decimals} suffix={suffix} enableScrollSpy scrollSpyOnce />
             </p>
-            {subtitle && <p className="text-xs" style={{ color: '#8B8FA8' }}>{subtitle}</p>}
+            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
             {trend && (
               <div className="flex items-center gap-1 pt-0.5">
                 {trend.delta > 0 ? (
@@ -57,21 +57,18 @@ function KpiCard({ title, value, suffix, subtitle, icon: Icon, iconColor, iconBg
                 ) : trend.delta < 0 ? (
                   <TrendingDown className="h-3 w-3" style={{ color: '#F87171' }} />
                 ) : (
-                  <Minus className="h-3 w-3" style={{ color: '#8B8FA8' }} />
+                  <Minus className="h-3 w-3 text-muted-foreground" />
                 )}
                 <span
-                  className="text-xs font-medium"
-                  style={{ color: trend.delta > 0 ? '#4ADE80' : trend.delta < 0 ? '#F87171' : '#8B8FA8' }}
+                  className={`text-xs font-medium ${trend.delta === 0 ? 'text-muted-foreground' : ''}`}
+                  style={{ color: trend.delta > 0 ? '#4ADE80' : trend.delta < 0 ? '#F87171' : undefined }}
                 >
                   {Math.abs(trend.delta)} {trend.label}
                 </span>
               </div>
             )}
           </div>
-          <div
-            className="p-2.5 rounded-xl"
-            style={{ background: iconBg }}
-          >
+          <div className="p-2.5 rounded-xl" style={{ background: iconBg }}>
             <Icon className="h-5 w-5" style={{ color: iconColor }} />
           </div>
         </div>
@@ -205,12 +202,12 @@ function AdminDashboardPage() {
     <div className="space-y-6">
       <div>
         <h1
-          className="text-2xl font-bold"
-          style={{ fontFamily: '"Playfair Display", Georgia, serif', color: '#F2F2F0', letterSpacing: '-0.025em' }}
+          className="text-2xl font-bold text-foreground"
+          style={{ fontFamily: '"Playfair Display", Georgia, serif', letterSpacing: '-0.025em' }}
         >
           Admin Dashboard
         </h1>
-        <p className="text-sm mt-1" style={{ color: '#8B8FA8' }}>Platform overview and key metrics</p>
+        <p className="text-sm mt-1 text-muted-foreground">Platform overview and key metrics</p>
       </div>
 
       {/* KPI cards */}
@@ -246,7 +243,7 @@ function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="glass-card border-0" style={{ borderRadius: 16 }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base" style={{ color: '#F2F2F0' }}>User Signups — Last 30 Days</CardTitle>
+            <CardTitle className="text-base text-foreground">User Signups — Last 30 Days</CardTitle>
           </CardHeader>
           <CardContent className="-mx-2">
             <HighchartsReact highcharts={Highcharts} options={userGrowthOptions} />
@@ -255,7 +252,7 @@ function AdminDashboardPage() {
 
         <Card className="glass-card border-0" style={{ borderRadius: 16 }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base" style={{ color: '#F2F2F0' }}>Tests Taken — Last 30 Days</CardTitle>
+            <CardTitle className="text-base text-foreground">Tests Taken — Last 30 Days</CardTitle>
           </CardHeader>
           <CardContent className="-mx-2">
             <HighchartsReact highcharts={Highcharts} options={testActivityOptions} />
@@ -267,26 +264,26 @@ function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <Card className="glass-card border-0 lg:col-span-3" style={{ borderRadius: 16 }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base" style={{ color: '#F2F2F0' }}>Top Exams by Enrollment</CardTitle>
+            <CardTitle className="text-base text-foreground">Top Exams by Enrollment</CardTitle>
           </CardHeader>
           <CardContent>
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                  <th className="text-left py-2 font-medium w-6" style={{ color: '#8B8FA8' }}>#</th>
-                  <th className="text-left py-2 font-medium" style={{ color: '#8B8FA8' }}>Exam</th>
-                  <th className="text-right py-2 font-medium" style={{ color: '#8B8FA8' }}>Enrolled</th>
-                  <th className="text-right py-2 font-medium" style={{ color: '#8B8FA8' }}>Avg Score</th>
+                <tr className="border-b border-border/50">
+                  <th className="text-left py-2 font-medium w-6 text-muted-foreground">#</th>
+                  <th className="text-left py-2 font-medium text-muted-foreground">Exam</th>
+                  <th className="text-right py-2 font-medium text-muted-foreground">Enrolled</th>
+                  <th className="text-right py-2 font-medium text-muted-foreground">Avg Score</th>
                 </tr>
               </thead>
               <tbody>
                 {(stats.topExams ?? []).map((exam: AdminTopExam, i) => (
-                  <tr key={exam.examId} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td className="py-2.5" style={{ color: '#8B8FA8' }}>{i + 1}</td>
-                    <td className="py-2.5 font-medium" style={{ color: '#F2F2F0' }}>
+                  <tr key={exam.examId} className="border-b border-border/30">
+                    <td className="py-2.5 text-muted-foreground">{i + 1}</td>
+                    <td className="py-2.5 font-medium text-foreground">
                       <span className="line-clamp-1">{exam.examTitle}</span>
                     </td>
-                    <td className="py-2.5 text-right" style={{ color: '#8B8FA8' }}>
+                    <td className="py-2.5 text-right text-muted-foreground">
                       {exam.enrolledCount.toLocaleString()}
                     </td>
                     <td className="py-2.5 text-right">
@@ -299,13 +296,13 @@ function AdminDashboardPage() {
                         >
                           {exam.avgScore}%
                         </span>
-                      ) : <span style={{ color: '#8B8FA8' }}>—</span>}
+                      ) : <span className="text-muted-foreground">—</span>}
                     </td>
                   </tr>
                 ))}
                 {(stats.topExams ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-sm" style={{ color: '#8B8FA8' }}>
+                    <td colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
                       No test activity yet
                     </td>
                   </tr>
@@ -317,13 +314,13 @@ function AdminDashboardPage() {
 
         <Card className="glass-card border-0 lg:col-span-2" style={{ borderRadius: 16 }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base" style={{ color: '#F2F2F0' }}>Question Difficulty</CardTitle>
+            <CardTitle className="text-base text-foreground">Question Difficulty</CardTitle>
           </CardHeader>
           <CardContent>
             {hasDifficultyData ? (
               <HighchartsReact highcharts={Highcharts} options={difficultyOptions} />
             ) : (
-              <div className="h-48 flex items-center justify-center text-sm" style={{ color: '#8B8FA8' }}>
+              <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
                 No questions added yet
               </div>
             )}
@@ -337,11 +334,11 @@ function AdminDashboardPage() {
           <CardContent className="pt-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-medium" style={{ color: '#8B8FA8' }}>AI Messages Today</p>
-                <p className="text-2xl font-bold" style={{ color: '#F2F2F0' }}>
+                <p className="text-xs font-medium text-muted-foreground">AI Messages Today</p>
+                <p className="text-2xl font-bold text-foreground">
                   {stats.aiMessagesToday.toLocaleString()}
                 </p>
-                <p className="text-xs mt-1" style={{ color: '#8B8FA8' }}>
+                <p className="text-xs mt-1 text-muted-foreground">
                   {stats.aiMessagesThisMonth.toLocaleString()} this month
                 </p>
               </div>
@@ -356,11 +353,11 @@ function AdminDashboardPage() {
           <CardContent className="pt-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-medium" style={{ color: '#8B8FA8' }}>New Users / Month</p>
-                <p className="text-2xl font-bold" style={{ color: '#F2F2F0' }}>
+                <p className="text-xs font-medium text-muted-foreground">New Users / Month</p>
+                <p className="text-2xl font-bold text-foreground">
                   {stats.newUsersThisMonth.toLocaleString()}
                 </p>
-                <p className="text-xs mt-1" style={{ color: '#8B8FA8' }}>{stats.newUsersThisWeek} this week</p>
+                <p className="text-xs mt-1 text-muted-foreground">{stats.newUsersThisWeek} this week</p>
               </div>
               <div className="p-2.5 rounded-xl" style={{ background: 'rgba(0,229,204,0.12)' }}>
                 <TrendingUp className="h-5 w-5" style={{ color: '#00E5CC' }} />
@@ -375,9 +372,9 @@ function AdminDashboardPage() {
               <CardContent className="pt-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs font-medium" style={{ color: '#8B8FA8' }}>Total Exams</p>
-                    <p className="text-2xl font-bold" style={{ color: '#F2F2F0' }}>{content.exams.total}</p>
-                    <p className="text-xs mt-1" style={{ color: '#8B8FA8' }}>
+                    <p className="text-xs font-medium text-muted-foreground">Total Exams</p>
+                    <p className="text-2xl font-bold text-foreground">{content.exams.total}</p>
+                    <p className="text-xs mt-1 text-muted-foreground">
                       {content.exams.active} active · {content.exams.inactive} inactive
                     </p>
                   </div>
@@ -392,11 +389,11 @@ function AdminDashboardPage() {
               <CardContent className="pt-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs font-medium" style={{ color: '#8B8FA8' }}>Total Questions</p>
-                    <p className="text-2xl font-bold" style={{ color: '#F2F2F0' }}>
+                    <p className="text-xs font-medium text-muted-foreground">Total Questions</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {content.questions.total.toLocaleString()}
                     </p>
-                    <p className="text-xs mt-1" style={{ color: '#8B8FA8' }}>
+                    <p className="text-xs mt-1 text-muted-foreground">
                       {content.topics} topics · {content.subjects} subjects
                     </p>
                   </div>

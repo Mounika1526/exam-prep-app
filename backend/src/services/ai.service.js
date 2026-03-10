@@ -187,46 +187,64 @@ export function handleInterviewWS(ws, req) {
   const model = getModel();
   let chat = null;
 
-  const systemPrompt = `You are an expert technical interviewer conducting a mock interview.
+  const genericGreeting = "Hello! I'm your AI interviewer. What role or exam are you preparing for today?";
+  const genericPrompt = `You are an expert technical interviewer conducting a mock interview.
 Ask questions, evaluate answers, provide feedback, and guide the candidate.
-Be professional, fair, and constructive. Start by introducing yourself and asking what role they're preparing for.`;
+Be professional, fair, and constructive.`;
 
-  const initChat = () => {
+  const initGeneric = () => {
     chat = model.startChat({
       history: [
-        { role: 'user', parts: [{ text: systemPrompt }] },
-        {
-          role: 'model',
-          parts: [
-            {
-              text: "Hello! I'm your AI interviewer. What role are you preparing for today?",
-            },
-          ],
-        },
+        { role: 'user', parts: [{ text: genericPrompt }] },
+        { role: 'model', parts: [{ text: genericGreeting }] },
       ],
     });
   };
 
-  ws.send(
-    JSON.stringify({
-      type: 'greeting',
-      message: "Hello! I'm your AI interviewer. What role are you preparing for today?",
-    })
-  );
+  const initWithContext = (context = {}) => {
+    const { name, targetExam, avgScore, completedTopics, weakTopics } = context;
+    const firstName = name ? name.split(' ')[0] : null;
 
-  initChat();
+    const personalizedPrompt = `You are an expert technical interviewer conducting a mock interview.
+${name ? `The candidate's name is ${name}.` : ''}
+${targetExam ? `They are preparing for: ${targetExam}.` : ''}
+${avgScore != null ? `Their average test score is ${avgScore}%. ${avgScore < 50 ? 'They need improvement in core concepts.' : avgScore < 70 ? 'They have moderate understanding.' : 'They have a strong foundation.'}` : ''}
+${completedTopics ? `They have completed ${completedTopics} study topics.` : ''}
+${weakTopics?.length ? `Weak areas to focus interview questions on: ${weakTopics.join(', ')}.` : ''}
+Ask targeted questions based on their exam and weak areas. Evaluate each answer with specific feedback before moving on.`;
+
+    const greeting = `Hello${firstName ? ` ${firstName}` : ''}! I'm your AI interviewer.${
+      targetExam ? ` I can see you're preparing for ${targetExam}.` : ''
+    }${weakTopics?.length ? ` We'll pay special attention to ${weakTopics.slice(0, 2).join(' and ')}.` : ''} Are you ready to begin?`;
+
+    chat = model.startChat({
+      history: [
+        { role: 'user', parts: [{ text: personalizedPrompt }] },
+        { role: 'model', parts: [{ text: greeting }] },
+      ],
+    });
+
+    return greeting;
+  };
 
   ws.on('message', async (data) => {
     try {
-      const { type, message } = JSON.parse(data.toString());
+      const { type, message, context } = JSON.parse(data.toString());
+
+      if (type === 'start') {
+        const greeting = initWithContext(context || {});
+        ws.send(JSON.stringify({ type: 'greeting', message: greeting }));
+        return;
+      }
 
       if (type === 'reset') {
-        initChat();
-        ws.send(JSON.stringify({ type: 'reset', message: 'Session reset. Ready to start over!' }));
+        initGeneric();
+        ws.send(JSON.stringify({ type: 'greeting', message: genericGreeting }));
         return;
       }
 
       if (type === 'message' && message) {
+        if (!chat) initGeneric();
         const result = await chat.sendMessage(message);
         const response = result.response.text();
         ws.send(JSON.stringify({ type: 'response', message: response }));

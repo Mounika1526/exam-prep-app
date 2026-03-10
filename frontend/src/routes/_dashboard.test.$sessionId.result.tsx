@@ -21,8 +21,6 @@ export const Route = createFileRoute('/_dashboard/test/$sessionId/result')({
   component: TestResultPage,
 })
 
-// ─── Animated score ring ──────────────────────────────────────────────────────
-
 function getScoreGradient(score: number): [string, string] {
   if (score >= 80) return ['#4ADE80', '#00E5CC']
   if (score >= 60) return ['#F5A623', '#F59E0B']
@@ -90,8 +88,6 @@ function AnimatedScoreRing({ score }: { score: number }) {
     </div>
   )
 }
-
-// ─── Confetti ─────────────────────────────────────────────────────────────────
 
 const CONFETTI_COLORS = ['#00E5CC', '#4ADE80', '#C084FC', '#F5A623', '#60A5FA', '#F87171']
 
@@ -307,7 +303,6 @@ function TestResultPage() {
     staleTime: Infinity,
     retry: false,
   })
-
   const { data: weakTopics } = useQuery<Array<{
     id: string; title: string; accuracy: number; correct: number; total: number;
     estimatedMins?: number; chapter: { title: string; subject: { title: string } }

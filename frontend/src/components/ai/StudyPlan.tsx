@@ -29,9 +29,10 @@ import {
   Lightbulb,
   RefreshCw,
   BookOpen,
+  ExternalLink,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { StudyPlanData } from "@/types";
+import type { StudyPlanData, StudyPlanReference } from "@/types";
 import ReactMarkdown from "react-markdown";
 
 export function StudyPlan() {
@@ -144,9 +145,9 @@ export function StudyPlan() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {["1", "2", "3", "4", "5", "6", "8"].map((h) => (
+                  {["1", "2", "3", "4", "5", "6", "7", "8", "10", "12"].map((h) => (
                     <SelectItem key={h} value={h}>
-                      {h} hours
+                      {h} {h === "1" ? "hour" : "hours"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -292,6 +293,57 @@ export function StudyPlan() {
                       <div className="prose prose-sm dark:prose-invert max-w-none">
                         <ReactMarkdown>{tip}</ReactMarkdown>
                       </div>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* References */}
+          {plan.references && plan.references.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-blue-500" />
+                  Recommended Resources
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {plan.references.map((ref: StudyPlanReference, i: number) => (
+                    <li key={i} className="flex items-start gap-3 text-sm">
+                      <span
+                        className="text-xs font-medium px-1.5 py-0.5 rounded shrink-0 mt-0.5"
+                        style={{
+                          background: ref.type === 'book' ? 'rgba(167,139,250,0.15)' :
+                                      ref.type === 'video' ? 'rgba(248,113,113,0.15)' :
+                                      ref.type === 'website' ? 'rgba(0,229,204,0.12)' :
+                                      'rgba(245,166,35,0.15)',
+                          color: ref.type === 'book' ? '#A78BFA' :
+                                 ref.type === 'video' ? '#F87171' :
+                                 ref.type === 'website' ? '#00E5CC' :
+                                 '#F5A623',
+                        }}
+                      >
+                        {ref.type}
+                      </span>
+                      <span className="flex-1">
+                        {ref.url ? (
+                          <a
+                            href={ref.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline inline-flex items-center gap-1"
+                            style={{ color: '#00E5CC' }}
+                          >
+                            {ref.title}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">{ref.title}</span>
+                        )}
+                      </span>
                     </li>
                   ))}
                 </ul>

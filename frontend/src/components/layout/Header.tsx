@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { BookOpen, User, LogOut, Menu, Search, Sun, Moon, Monitor } from 'lucide-react'
 import { MobileNav } from '@/components/layout/MobileNav'
+import { AdminMobileNav } from '@/components/admin/AdminMobileNav'
 import { useTheme } from '@/contexts/ThemeContext'
 
 // Build breadcrumb from pathname
@@ -39,6 +40,7 @@ function useBreadcrumb() {
 
 interface HeaderProps {
   onSearchOpen: () => void
+  isAdmin?: boolean
 }
 
 const THEME_OPTIONS = [
@@ -47,7 +49,7 @@ const THEME_OPTIONS = [
   { value: 'system', label: 'System', icon: Monitor },
 ] as const
 
-export function Header({ onSearchOpen }: HeaderProps) {
+export function Header({ onSearchOpen, isAdmin = false }: HeaderProps) {
   const { user } = useAuthStore()
   const { logout } = useAuth()
   const { theme, setTheme, resolvedTheme } = useTheme()
@@ -84,8 +86,8 @@ export function Header({ onSearchOpen }: HeaderProps) {
 
           {/* Page title — Playfair Display on desktop */}
           <h1
-            className="text-lg font-semibold"
-            style={{ fontFamily: '"Playfair Display", Georgia, serif', color: '#F2F2F0', letterSpacing: '-0.01em' }}
+            className="text-lg font-semibold text-foreground"
+            style={{ fontFamily: '"Playfair Display", Georgia, serif', letterSpacing: '-0.01em' }}
           >
             {pageTitle}
           </h1>
@@ -98,7 +100,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
           <button
             onClick={onSearchOpen}
             aria-label="Search (Ctrl+K)"
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-150"
+            className="ds-header-search hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-150"
             style={{
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.09)',
@@ -215,7 +217,10 @@ export function Header({ onSearchOpen }: HeaderProps) {
         </div>
       </header>
 
-      <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      {isAdmin
+        ? <AdminMobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+        : <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      }
     </>
   )
 }

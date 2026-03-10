@@ -141,6 +141,12 @@ export interface AiStudyPlan {
   generatedAt: string
 }
 
+export interface StudyPlanReference {
+  title: string
+  type: 'book' | 'website' | 'video' | 'article'
+  url?: string
+}
+
 export interface StudyPlanData {
   overview: string
   totalDays: number
@@ -149,6 +155,7 @@ export interface StudyPlanData {
   dailySchedule: Record<string, string>
   weeklyMilestones: Array<{ week: number; goal: string }>
   tips: string[]
+  references?: StudyPlanReference[]
 }
 
 export interface StudyPhase {

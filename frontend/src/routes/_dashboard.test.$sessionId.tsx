@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, Navigate, Outlet, useRouterState } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useState, useEffect } from 'react'
@@ -31,6 +31,7 @@ function ActiveTestPage() {
   const navigate       = useNavigate()
   const { toast }      = useToast()
   const queryClient    = useQueryClient()
+  const { location }   = useRouterState()
 
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers,    setAnswers]     = useState<Record<string, string>>({})
@@ -44,11 +45,6 @@ function ActiveTestPage() {
     retry: false,
   })
 
-  useEffect(() => {
-    if (sessionData?.status === 'COMPLETED' || isError) {
-      navigate({ to: '/test/$sessionId/result', params: { sessionId } })
-    }
-  }, [sessionData?.status, isError, navigate, sessionId])
 
   useEffect(() => {
     if (sessionData?.answers) setAnswers(sessionData.answers)
@@ -116,13 +112,12 @@ function ActiveTestPage() {
     )
   }
 
-  if (isError || !sessionData) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#00E5CC' }} />
-        <p style={{ color: '#8B8FA8' }}>Redirecting to results…</p>
-      </div>
-    )
+  // Session completed or error — redirect only if on the exact parent route, else let child render
+  if (!isLoading && (isError || sessionData?.status === 'COMPLETED')) {
+    if (location.pathname === `/test/${sessionId}`) {
+      return <Navigate to="/test/$sessionId/result" params={{ sessionId }} replace />
+    }
+    return <Outlet />
   }
 
   const questions: any[]             = sessionData.questions ?? []

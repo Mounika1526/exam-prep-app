@@ -34,7 +34,7 @@ function AdminLayout() {
     <div className="flex h-screen bg-background overflow-hidden">
       <AdminSidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header onSearchOpen={() => setSearchOpen(true)} />
+        <Header onSearchOpen={() => setSearchOpen(true)} isAdmin />
         <main className="flex-1 overflow-y-auto">
           <PageTransition routeKey={pathname} className="p-6 min-h-full">
             <Outlet />

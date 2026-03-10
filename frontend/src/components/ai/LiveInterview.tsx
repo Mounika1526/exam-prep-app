@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -7,6 +8,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Mic, MicOff, Send, RotateCcw, Bot, Circle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { api } from '@/lib/api'
+import type { DashboardStats } from '@/types'
 
 interface Message {
   role: 'USER' | 'AI'
@@ -24,14 +27,35 @@ export function LiveInterview() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:5000'
 
+  // Load dashboard stats for context (uses cache if already fetched)
+  const { data: stats } = useQuery<DashboardStats>({
+    queryKey: ['dashboard-stats'],
+    queryFn: () => api.get('/users/dashboard').then(r => r.data.data),
+    staleTime: 5 * 60 * 1000,
+  })
+
   const connect = () => {
     setIsConnecting(true)
     const ws = new WebSocket(`${WS_URL}/ws/interview`)
     wsRef.current = ws
 
+    // Capture stats at connect time
+    const currentStats = stats
+
     ws.onopen = () => {
       setIsConnected(true)
       setIsConnecting(false)
+      // Send user context so interview is personalized to their progress
+      ws.send(JSON.stringify({
+        type: 'start',
+        context: {
+          name: user?.name,
+          targetExam: (user as any)?.targetExam ?? null,
+          avgScore: currentStats?.tests?.avgScore ?? null,
+          completedTopics: currentStats?.progress?.completed ?? null,
+          weakTopics: [],
+        },
+      }))
     }
 
     ws.onmessage = (e) => {
@@ -61,7 +85,17 @@ export function LiveInterview() {
   }
 
   const reset = () => {
-    wsRef.current?.send(JSON.stringify({ type: 'reset' }))
+    setMessages([])
+    wsRef.current?.send(JSON.stringify({
+      type: 'start',
+      context: {
+        name: user?.name,
+        targetExam: (user as any)?.targetExam ?? null,
+        avgScore: stats?.tests?.avgScore ?? null,
+        completedTopics: stats?.progress?.completed ?? null,
+        weakTopics: [],
+      },
+    }))
   }
 
   const send = () => {

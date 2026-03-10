@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Flame, Trophy, Leaf, Gem } from 'lucide-react'
+import { Flame, Trophy, Leaf, Gem, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Streak } from '@/types'
 
@@ -127,6 +127,18 @@ export function StreakCard({ streak }: Props) {
               <div key={i} className="flex-1 text-center text-[10px]" style={{ color: '#8B8FA8' }}>{d}</div>
             ))}
           </div>
+        </div>
+
+        {/* ── How streak works ── */}
+        <div
+          className="flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: '#8B8FA8' }} />
+          <p style={{ color: '#8B8FA8', lineHeight: 1.5 }}>
+            Streak increases by 1 each consecutive day you complete a test or study session.
+            Skipping a day resets it to 1.
+          </p>
         </div>
 
       </CardContent>

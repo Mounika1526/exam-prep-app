@@ -60,12 +60,17 @@ function TestSetupPage() {
   const [count, setCount] = useState("20");
   const [timeLimitMins, setTimeLimitMins] = useState("NONE");
 
-  const { data: examsData } = useQuery({
-    queryKey: ["exams"],
-    queryFn: () => api.get("/exams?limit=100").then((r) => r.data),
-    staleTime: 10 * 60 * 1000,
+  // Only enrolled exams (exams the student has started studying)
+  const { data: enrolledData } = useQuery({
+    queryKey: ["enrolled-exams"],
+    queryFn: () => api.get("/users/enrolled-exams").then((r) => r.data.data),
+    staleTime: 5 * 60 * 1000,
   });
-  const exams: any[] = examsData?.data?.data ?? [];
+  const exams: any[] = (enrolledData ?? []).map((e: any) => ({
+    id: e.examId,
+    title: e.examTitle,
+    progressPct: e.progressPct,
+  }));
 
   const { data: examDetail, isLoading: loadingSubjects } = useQuery({
     queryKey: ["exam-subjects", examId],
@@ -148,18 +153,45 @@ function TestSetupPage() {
             <Label style={{ color: "#F2F2F0" }}>
               Exam <span style={{ color: "#F87171" }}>*</span>
             </Label>
-            <Select value={examId} onValueChange={setExamId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select an exam…" />
-              </SelectTrigger>
-              <SelectContent>
-                {exams.map((e: any) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {exams.length === 0 ? (
+              <div
+                className="rounded-md px-3 py-2.5 text-sm"
+                style={{
+                  background: "rgba(245,166,35,0.08)",
+                  border: "1px solid rgba(245,166,35,0.25)",
+                  color: "#F5A623",
+                }}
+              >
+                No enrolled exams yet.{" "}
+                <a href="/exams" className="underline font-medium">
+                  Browse exams
+                </a>{" "}
+                to get started.
+              </div>
+            ) : (
+              <Select value={examId} onValueChange={setExamId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an enrolled exam…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {exams.map((e: any) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      <span className="flex items-center justify-between w-full gap-3">
+                        {e.title}
+                        {e.progressPct != null && (
+                          <span
+                            className="text-xs font-medium ml-auto"
+                            style={{ color: "#00E5CC" }}
+                          >
+                            {e.progressPct}%
+                          </span>
+                        )}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Subjects filter */}
@@ -282,38 +314,58 @@ function TestSetupPage() {
 
           {/* Summary */}
           <div
-            className="rounded-xl px-4 py-3 flex flex-wrap gap-3 text-sm"
+            className="rounded-xl px-4 py-3 space-y-2 text-sm"
             style={{
               background: "rgba(255,255,255,0.04)",
               border: "1px solid rgba(255,255,255,0.08)",
             }}
           >
-            <span
-              className="flex items-center gap-1.5"
-              style={{ color: "#00E5CC" }}
-            >
-              <BookOpen className="h-3.5 w-3.5" />
-              {count} questions
-            </span>
-            {difficulty !== "ANY" && (
+            <div className="flex flex-wrap gap-3">
               <span
-                className="px-2 py-0.5 rounded-full text-xs font-medium"
-                style={{
-                  background: "rgba(245,166,35,0.12)",
-                  color: "#F5A623",
-                  border: "1px solid rgba(245,166,35,0.3)",
-                }}
+                className="flex items-center gap-1.5"
+                style={{ color: "#00E5CC" }}
               >
-                {difficulty}
+                <BookOpen className="h-3.5 w-3.5" />
+                {count} questions
               </span>
-            )}
-            {timeLimitMins !== "NONE" && (
-              <span style={{ color: "#8B8FA8" }}>⏱ {timeLimitMins} min</span>
-            )}
+              {difficulty !== "ANY" && (
+                <span
+                  className="px-2 py-0.5 rounded-full text-xs font-medium"
+                  style={{
+                    background: "rgba(245,166,35,0.12)",
+                    color: "#F5A623",
+                    border: "1px solid rgba(245,166,35,0.3)",
+                  }}
+                >
+                  {difficulty}
+                </span>
+              )}
+              {timeLimitMins !== "NONE" && (
+                <span style={{ color: "#8B8FA8" }}>⏱ {timeLimitMins} min</span>
+              )}
+              {subjectIds.length === 0 && (
+                <span style={{ color: "#8B8FA8" }}>All subjects</span>
+              )}
+            </div>
             {subjectIds.length > 0 && (
-              <span style={{ color: "#8B8FA8" }}>
-                {subjectIds.length} subject{subjectIds.length > 1 ? "s" : ""}
-              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {subjects
+                  .filter((s: any) => subjectIds.includes(s.id))
+                  .map((s: any) => (
+                    <span
+                      key={s.id}
+                      className="px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{
+                        background: "rgba(0,229,204,0.08)",
+                        color: "#00E5CC",
+                        border: "1px solid rgba(0,229,204,0.2)",
+                      }}
+                    >
+                      {s.icon && <span className="mr-1">{s.icon}</span>}
+                      {s.title}
+                    </span>
+                  ))}
+              </div>
             )}
           </div>
 

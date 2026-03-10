@@ -111,7 +111,10 @@ Return ONLY this JSON, no markdown, keep values brief:
       ]
     }
   ],
-  "tips": ["Tip 1", "Tip 2", "Tip 3"]
+  "tips": ["Tip 1", "Tip 2", "Tip 3"],
+  "references": [
+    { "title": "Resource name", "type": "book|website|video|article", "url": "optional URL or empty string" }
+  ]
 }`;
 
   const result = await model.generateContent(prompt);

@@ -7,7 +7,6 @@ import { useAuthStore } from '@/stores/authStore'
 import { StatsCard } from '@/components/dashboard/StatsCard'
 import { StreakCard } from '@/components/dashboard/StreakCard'
 import { RecentActivity } from '@/components/dashboard/RecentActivity'
-import { ProgressHeatmap } from '@/components/dashboard/ProgressHeatmap'
 import { ProgressChart } from '@/components/dashboard/ProgressChart'
 import { ContinueStudyingCard } from '@/components/dashboard/ContinueStudyingCard'
 import { RecentTestResults } from '@/components/dashboard/RecentTestResults'
@@ -185,14 +184,11 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Row 5: Study activity chart + Activity heatmap ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ProgressChart
-          data={s?.recentStudySessions ?? []}
-          isLoading={isLoading}
-        />
-        <ProgressHeatmap />
-      </div>
+      {/* ── Row 5: Study activity chart (full width) ── */}
+      <ProgressChart
+        data={s?.recentStudySessions ?? []}
+        isLoading={isLoading}
+      />
 
       {/* ── Row 6: Streak card + Daily goal + Recent study activity ── */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

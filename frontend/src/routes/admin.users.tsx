@@ -88,12 +88,12 @@ function AdminUsersPage() {
     <div className="space-y-5">
       <div>
         <h1
-          className="text-2xl font-bold"
-          style={{ fontFamily: '"Playfair Display", Georgia, serif', color: '#F2F2F0', letterSpacing: '-0.025em' }}
+          className="text-2xl font-bold text-foreground"
+          style={{ fontFamily: '"Playfair Display", Georgia, serif', letterSpacing: '-0.025em' }}
         >
           User Management
         </h1>
-        <p className="text-sm mt-1" style={{ color: '#8B8FA8' }}>
+        <p className="text-sm mt-1 text-muted-foreground">
           {pagination ? `${pagination.total.toLocaleString()} users total` : 'Manage all platform users'}
         </p>
       </div>
@@ -103,22 +103,12 @@ function AdminUsersPage() {
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1 min-w-[200px]">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
-                style={{ color: '#8B8FA8' }}
-              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 placeholder="Search name or email…"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full h-9 pl-9 pr-3 rounded-md text-sm focus:outline-none focus:ring-1"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  color: '#F2F2F0',
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = 'rgba(0,229,204,0.4)' }}
-                onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)' }}
+                className="w-full h-9 pl-9 pr-3 rounded-md text-sm focus:outline-none focus:ring-1 bg-accent/50 border border-border text-foreground placeholder:text-muted-foreground focus:border-[rgba(0,229,204,0.4)]"
               />
             </div>
 
@@ -155,7 +145,7 @@ function AdminUsersPage() {
       {/* Table */}
       <Card className="glass-card border-0" style={{ borderRadius: 14 }}>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2" style={{ color: '#F2F2F0' }}>
+          <CardTitle className="text-base flex items-center gap-2 text-foreground">
             Users
             {isFetching && (
               <span
@@ -182,19 +172,19 @@ function AdminUsersPage() {
               ))}
             </div>
           ) : users.length === 0 ? (
-            <div className="py-16 text-center text-sm" style={{ color: '#8B8FA8' }}>
+            <div className="py-16 text-center text-sm text-muted-foreground">
               No users found
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
-                    <th className="text-left px-4 py-3 font-medium" style={{ color: '#8B8FA8' }}>User</th>
-                    <th className="text-left px-4 py-3 font-medium" style={{ color: '#8B8FA8' }}>Role</th>
-                    <th className="text-right px-4 py-3 font-medium" style={{ color: '#8B8FA8' }}>Tests</th>
-                    <th className="text-left px-4 py-3 font-medium" style={{ color: '#8B8FA8' }}>Last Active</th>
-                    <th className="text-left px-4 py-3 font-medium" style={{ color: '#8B8FA8' }}>Status</th>
+                  <tr className="border-b border-border/50 bg-accent/20">
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">User</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Role</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Tests</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Last Active</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -217,28 +207,15 @@ function AdminUsersPage() {
 
         {/* Pagination */}
         {pagination && pagination.totalPages > 1 && (
-          <div
-            className="flex items-center justify-between px-4 py-3"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
-          >
-            <p className="text-sm" style={{ color: '#8B8FA8' }}>
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border/40">
+            <p className="text-sm text-muted-foreground">
               Page {pagination.page} of {pagination.totalPages} ({pagination.total} users)
             </p>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline" size="sm"
-                onClick={() => setPage((p) => p - 1)}
-                disabled={!pagination.hasPrev}
-                style={{ borderColor: 'rgba(255,255,255,0.12)', color: '#8B8FA8', background: 'transparent' }}
-              >
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={!pagination.hasPrev}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button
-                variant="outline" size="sm"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={!pagination.hasNext}
-                style={{ borderColor: 'rgba(255,255,255,0.12)', color: '#8B8FA8', background: 'transparent' }}
-              >
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={!pagination.hasNext}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -266,20 +243,12 @@ function UserRow({
 
   return (
     <tr
-      style={{
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        opacity: isUpdating ? 0.6 : 1,
-        transition: 'background 0.15s',
-      }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+      className="border-b border-border/30 transition-colors hover:bg-accent/30"
+      style={{ opacity: isUpdating ? 0.6 : 1 }}
     >
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <Avatar
-            className="h-9 w-9 shrink-0"
-            style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-          >
+          <Avatar className="h-9 w-9 shrink-0 border border-border">
             <AvatarImage src={user.avatar} />
             <AvatarFallback
               className="text-xs font-medium"
@@ -289,10 +258,10 @@ function UserRow({
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="font-medium truncate" style={{ color: '#F2F2F0' }}>{user.name}</p>
-            <p className="text-xs truncate" style={{ color: '#8B8FA8' }}>{user.email}</p>
+            <p className="font-medium truncate text-foreground">{user.name}</p>
+            <p className="text-xs truncate text-muted-foreground">{user.email}</p>
             {user.targetExam && (
-              <p className="text-xs truncate" style={{ color: 'rgba(0,229,204,0.6)' }}>{user.targetExam}</p>
+              <p className="text-xs truncate" style={{ color: 'rgba(0,229,204,0.7)' }}>{user.targetExam}</p>
             )}
           </div>
         </div>
@@ -300,16 +269,16 @@ function UserRow({
 
       <td className="px-4 py-3">
         <span
-          className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full"
+          className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${
+            user.role === 'ADMIN'
+              ? ''
+              : 'bg-accent text-muted-foreground border border-border'
+          }`}
           style={user.role === 'ADMIN' ? {
             background: 'rgba(0,229,204,0.12)',
             color: '#00E5CC',
             border: '1px solid rgba(0,229,204,0.25)',
-          } : {
-            background: 'rgba(255,255,255,0.06)',
-            color: '#8B8FA8',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}
+          } : undefined}
         >
           {user.role === 'ADMIN'
             ? <><ShieldCheck className="h-3 w-3" />Admin</>
@@ -318,11 +287,11 @@ function UserRow({
         </span>
       </td>
 
-      <td className="px-4 py-3 text-right" style={{ color: '#8B8FA8' }}>
+      <td className="px-4 py-3 text-right text-muted-foreground">
         {user._count.testSessions}
       </td>
 
-      <td className="px-4 py-3 text-sm" style={{ color: '#8B8FA8' }}>
+      <td className="px-4 py-3 text-sm text-muted-foreground">
         {timeAgo(user.lastActive)}
       </td>
 
